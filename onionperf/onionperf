@@ -145,6 +145,11 @@ def main():
         action="store", dest="tgenpath",
         default=util.which("tgen"))
 
+    measure_parser.add_argument('--oneshot',
+        help="""Enables oneshot mode, onionperf closes on successfully downloading a file""",
+        action="store_true", dest="oneshot",
+        default=False)
+
     measure_parser.add_argument('--tgen-connect-ip',
         help="""the TGen client connect IP address ADDR, or 0.0.0.0 to do an external IP lookup; must be Internet-accessible for non-onion downloads to work""",
         metavar="ADDR", type=type_str_ip_in,
@@ -163,12 +168,12 @@ def main():
         action="store", dest="tgenconnectport",
         default=8080)
 
-    measure_parser.add_argument('-i', '--no-inet',
+    measure_parser.add_argument('-o', '--onion-only',
         help="""disable measuring download times over Tor back to {0}""".format(hostname),
         action="store_false", dest="do_inet",
         default=True)
 
-    measure_parser.add_argument('-o', '--no-onion',
+    measure_parser.add_argument('-i', '--inet-only',
         help="""disable measuring download times over Tor to an ephemeral onion service""",
         action="store_false", dest="do_onion",
         default=True)
@@ -363,7 +368,7 @@ def measure(args):
         server_tor_ctl_port = util.get_random_free_port()
         server_tor_socks_port = util.get_random_free_port()
 
-        meas = Measurement(args.torpath, args.tgenpath, args.prefix, args.nickname)
+        meas = Measurement(args.torpath, args.tgenpath, args.prefix, args.nickname, args.oneshot)
         meas.run(do_onion=args.do_onion, do_inet=args.do_inet,
              client_tgen_listen_port=client_tgen_port, client_tgen_connect_ip=client_connect_ip, client_tgen_connect_port=client_connect_port, client_tor_ctl_port=client_tor_ctl_port, client_tor_socks_port=client_tor_socks_port,
              server_tgen_listen_port=server_tgen_port, server_tor_ctl_port=server_tor_ctl_port, server_tor_socks_port=server_tor_socks_port)

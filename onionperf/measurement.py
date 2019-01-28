@@ -166,6 +166,7 @@ class Measurement(object):
         self.tor_bin_path = tor_bin_path
         self.tgen_bin_path = tgen_bin_path
         self.datadir_path = datadir_path
+        self.oneshot = oneshot
         self.nickname = nickname
         self.threads = None
         self.done_event = None
@@ -236,9 +237,20 @@ class Measurement(object):
 
                 logging.info("Bootstrapping finished, entering heartbeat loop")
                 time.sleep(1)
+                logging.info("Onionperf is running in Oneshot mode. It will download a 5M file and shut down gracefully...")
                 while True:
                     # TODO add status update of some kind? maybe the number of files in the www directory?
                     # logging.info("Heartbeat: {0} downloads have completed successfully".format(self.__get_download_count(tgen_client_writable.filename)))
+                    if self.oneshot:
+                        downloads = 0
+                        while True:
+                            downloads = self.__get_download_count(tgen_client_writable.filename)
+                            if downloads == 1:
+                               logging.info("Onionperf has downloaded a 5M file in oneshot mode, and will now shut down.")
+                               break
+                        else:
+                            continue
+                        break
 
                     if self.__is_alive():
                         logging.info("All helper processes seem to be alive :)")
@@ -310,6 +322,8 @@ class Measurement(object):
         if socks_port is None:
             model.ListenModel(tgen_port="{0}".format(tgen_port)).dump_to_file(tgen_confpath)
             logging.info("TGen server running at 0.0.0.0:{0}".format(tgen_port))
+        elif self.oneshot:
+            model.OneshotModel(tgen_port="{0}".format(tgen_port), tgen_servers=server_urls, socksproxy="127.0.0.1:{0}".format(socks_port)).dump_to_file(tgen_confpath)
         else:
             model.TorperfModel(tgen_port="{0}".format(tgen_port), tgen_servers=server_urls, socksproxy="127.0.0.1:{0}".format(socks_port)).dump_to_file(tgen_confpath)
 
