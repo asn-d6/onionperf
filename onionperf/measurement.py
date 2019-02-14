@@ -170,6 +170,7 @@ class Measurement(object):
         self.threads = None
         self.done_event = None
         self.hs_service_id = None
+        self.hs_v3_service_id = None
         self.www_docroot = "{0}/htdocs".format(self.datadir_path)
 
     def run(self, do_onion=True, do_inet=True, client_tgen_listen_port=58888, client_tgen_connect_ip='0.0.0.0', client_tgen_connect_port=8080, client_tor_ctl_port=59050, client_tor_socks_port=59000,
@@ -219,8 +220,9 @@ class Measurement(object):
                 general_writables.append(tor_writable)
 
             server_urls = []
-            if do_onion and self.hs_service_id is not None:
+            if do_onion and self.hs_service_id is not None and self.hs_v3_service_id is not None:
                 server_urls.append("{0}.onion:{1}".format(self.hs_service_id, client_tgen_connect_port))
+                server_urls.append("{0}.onion:{1}".format(self.hs_v3_service_id, client_tgen_connect_port))
             if do_inet:
                 connect_ip = client_tgen_connect_ip if client_tgen_connect_ip != '0.0.0.0' else util.get_ip_address()
                 server_urls.append("{0}:{1}".format(connect_ip, client_tgen_connect_port))
@@ -263,6 +265,14 @@ class Measurement(object):
                         torctl.authenticate()
                         torctl.remove_ephemeral_hidden_service(self.hs_service_id)
                 except: pass  # this fails to authenticate if tor proc is dead
+
+            if self.hs_v3_service_id is not None:
+                try:
+                    with Controller.from_port(port=self.hs_v3_control_port) as torctl:
+                        torctl.authenticate()
+                        torctl.remove_ephemeral_hidden_service(self.hs_v3_service_id)
+                except: pass  # this fails to authenticate if tor proc is dead
+
 
 #            logging.disable(logging.INFO)
             self.done_event.set()
@@ -364,7 +374,7 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nUseEntryGuards
         self.threads.append(torctl_helper)
 
         if hs_port_mapping is not None:
-            logging.info("Creating ephemeral hidden service...")
+            logging.info("Creating ephemeral hidden service with v2 onions...")
             with Controller.from_port(port=control_port) as torctl:
                 torctl.authenticate()
                 response = torctl.create_ephemeral_hidden_service(hs_port_mapping, detached=True, await_publication=True)
@@ -372,6 +382,13 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nUseEntryGuards
                 self.hs_control_port = control_port
                 logging.info("Ephemeral hidden service is available at {0}.onion".format(response.service_id))
 
+            logging.info("Creating ephemeral hidden service with v3 onions...")
+            with Controller.from_port(port=control_port) as torctl:
+                torctl.authenticate()
+                response = torctl.create_ephemeral_hidden_service(hs_port_mapping, detached=True, await_publication=True, key_content='ED25519-V3')
+                self.hs_v3_service_id = response.service_id
+                self.hs_v3_control_port = control_port
+                logging.info("Ephemeral hidden service is available at {0}.onion".format(response.service_id))
         return tor_writable, torctl_writable
 
     def __get_download_count(self, tgen_logpath):
