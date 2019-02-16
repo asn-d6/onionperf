@@ -58,12 +58,12 @@ def find_file_paths_pairs(searchpath, patterns_a, patterns_b):
                 paths.append((paths_a, paths_b))
     return paths
 
-def find_path(binpath, defaultname):
+def find_path(binpath, defaultname, search_path=None):
     # find the path to tor
     if binpath is not None:
         binpath = os.path.abspath(os.path.expanduser(binpath))
     else:
-        w = which(defaultname)
+        w = which(defaultname, search_path)
         if w is not None:
             binpath = os.path.abspath(os.path.expanduser(w))
         else:
@@ -78,15 +78,18 @@ def find_path(binpath, defaultname):
     # we found it and it exists
     return binpath
 
-def which(program):
-    def is_exe(fpath):
-        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+def is_exe(fpath):
+    return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+def which(program, search_path=None):
+    if search_path is None:
+        search_path = os.environ["PATH"]
     fpath, fname = os.path.split(program)
     if fpath:
         if is_exe(program):
             return program
     else:
-        for path in os.environ["PATH"].split(os.pathsep):
+        for path in search_path.split(os.pathsep):
             exe_file = os.path.join(path, program)
             if is_exe(exe_file):
                 return exe_file
@@ -110,21 +113,26 @@ def do_dates_match(date1, date2):
     else:
         return False
 
-def get_ip_address():
+def find_ip_address_url(data):
     ip_address = None
-
-    data = urllib.urlopen('https://check.torproject.org/').read()
     if data is not None and len(data) > 0:
         ip_list = re.findall(r'[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}', data)
         if ip_list is not None and len(ip_list) > 0:
             ip_address = ip_list[0]
+    return ip_address
 
+def find_ip_address_local():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 53))
+    ip_address = s.getsockname()[0]
+    s.close()
+    return ip_address
+ 
+def get_ip_address():
+    data = urllib.urlopen('https://check.torproject.org/').read()
+    ip_address = find_ip_address_url(data) 
     if ip_address is None:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 53))
-        ip_address = s.getsockname()[0]
-        s.close()
-
+        ip_address = find_ip_address_local() 
     return ip_address
 
 def get_random_free_port():
