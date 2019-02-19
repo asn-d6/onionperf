@@ -1,11 +1,24 @@
-import os
-import sys
-import shutil
-import tempfile
 import datetime
 import hashlib
-from onionperf import util
+import os
+import pkg_resources
+import shutil
+import sys
+import tempfile
+
 from nose.tools import assert_equals
+
+from onionperf import util
+
+def absolute_data_path(relative_path=""):
+    """
+    Returns an absolute path for test data given a relative path.
+    """
+    return pkg_resources.resource_filename("onionperf",
+                                           "tests/data/" +
+                                           relative_path)
+
+DATA_DIR = absolute_data_path()
 
 def test_make_dir():
     """
@@ -27,11 +40,10 @@ def test_find_file_paths():
     Uses util.find_file_paths to find an existing file in the test data directory, given a pattern.
     The function returns the full path to the file.
     """
-    data_dir = "data" 
     pattern = ["abcdef"] 
-    paths = util.find_file_paths(data_dir, pattern)
+    paths = util.find_file_paths(DATA_DIR, pattern)
     print(paths)
-    assert_equals(paths, ["data/dirs/abcdefg.txt"])
+    assert_equals(paths, [absolute_data_path("dirs/abcdefg.txt")])
      
 def test_find_file_paths_with_dash():
     """
@@ -39,9 +51,8 @@ def test_find_file_paths_with_dash():
     pattern.  Ensures the path returned by the function defaults to stdin if there
     is a dash detected at the end of the given directory.
     """
-    data_dir = "data" 
     pattern = ["abcdef"] 
-    paths = util.find_file_paths(data_dir + "/-", pattern)
+    paths = util.find_file_paths(DATA_DIR + "/-", pattern)
     assert_equals(paths, ['-'])
  
 def test_find_file_paths_pairs():
@@ -92,17 +103,17 @@ def test_is_exe():
     Checks a non-executable file path is not accepted
     Checks a directory path is not accepted
     """
-    assert(util.is_exe("data/bin/script"))
-    assert(not util.is_exe("data/bin/script_no_exe"))
-    assert(not util.is_exe("data/bin/"))
+    assert(util.is_exe(absolute_data_path("bin/script")))
+    assert(not util.is_exe(absolute_data_path("bin/script_no_exe")))
+    assert(not util.is_exe(absolute_data_path("bin/")))
 
 def test_which():
     """
     Uses util.which with an executable file and a search path in the test data
     directory. Checks the full path of the file is identified.
     """
-    test_binary = util.which("script", search_path="data/bin/")
-    assert_equals(test_binary, "data/bin/script")
+    test_binary = util.which("script", search_path=absolute_data_path("bin/"))
+    assert_equals(test_binary, absolute_data_path("bin/script"))
 
 def test_which_not_executable():
     """
@@ -110,7 +121,8 @@ def test_which_not_executable():
     in the test data directory. Checks the non-executable file is not 
     identified as a program to run.
     """
-    test_binary = util.which("script_non_exe", search_path="data/bin/")
+    test_binary = util.which(
+        "script_non_exe", search_path=absolute_data_path("bin/"))
     assert_equals(test_binary, None)
 
 def test_which_full_path():
@@ -119,8 +131,10 @@ def test_which_full_path():
     search path. 
     Checks the full path of the file is identified.
     """
-    test_binary = util.which("data/bin/script", search_path="data/bin/")
-    assert_equals(test_binary, "data/bin/script")
+    test_binary = util.which(
+        absolute_data_path("bin/script"),
+        search_path=absolute_data_path("bin/"))
+    assert_equals(test_binary, absolute_data_path("bin/script"))
 
 
 def test_date_to_string():
@@ -200,7 +214,7 @@ def test_data_source_file():
     for this object. 
     DataSouce.source is verified against the contents of the input file.
     """
-    test_data_source = util.DataSource("data/simplefile")
+    test_data_source = util.DataSource(absolute_data_path("simplefile"))
     test_data_source.open()
     data_source_file_handle = test_data_source.source
     data_source_contents = data_source_file_handle.read()
@@ -215,7 +229,7 @@ def test_data_source_compressed_file():
     Verifies DataSource.compress is set to True. 
     DataSouce.source is verified against the contents of the input file.
     """
-    test_data_source = util.DataSource("data/simplefile.xz")
+    test_data_source = util.DataSource(absolute_data_path("simplefile.xz"))
     test_data_source.open()
     data_source_file_handle = test_data_source.source
     data_source_contents = data_source_file_handle.read()
