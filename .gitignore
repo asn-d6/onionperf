@@ -3,3 +3,4 @@ onionperf-data
 venv
 *.json.xz
 *.pdf
+*.pyc
