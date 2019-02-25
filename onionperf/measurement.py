@@ -243,7 +243,7 @@ class Measurement(object):
                         downloads = 0
                         while True:
                             downloads = self.__get_download_count(tgen_client_writable.filename)
-                            if downloads == 1:
+                            if downloads >= 1:
                                logging.info("Onionperf has downloaded a 5M file in oneshot mode, and will now shut down.")
                                break
                         else:
