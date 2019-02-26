@@ -323,9 +323,9 @@ class Measurement(object):
         else:
 
             tgen_model_args = {
-                                  tgen_port: "{0}".format(tgen_port), 
-                                  tgen_servers: server_urls,
-                                  socksproxy: "127.0.0.1:{0}".format(socks_port)
+                                  "tgen_port": "{0}".format(tgen_port), 
+                                  "tgen_servers": server_urls,
+                                  "socksproxy": "127.0.0.1:{0}".format(socks_port)
                               }
             if self.oneshot:
                 tgen_model = model.OneshotModel(**tgen_model_args)
