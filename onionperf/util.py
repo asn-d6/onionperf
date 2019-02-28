@@ -129,10 +129,29 @@ def find_ip_address_local():
     return ip_address
  
 def get_ip_address():
-    data = urllib.urlopen('https://check.torproject.org/').read()
-    ip_address = find_ip_address_url(data) 
-    if ip_address is None:
-        ip_address = find_ip_address_local() 
+    """
+    Determines the public IPv4 address of the vantage point using the
+    check.torproject.org service. If it is not possible to reach the service,
+    or to parse the result recieved, it will fall back to determining the local
+    IP address used for outbound connections.
+    """
+    ip_address = None
+    try:
+        data = urllib.urlopen('https://check.torproject.org/').read()
+        ip_address = find_ip_address_url(data)
+        if ip_address is None:
+            logging.error(
+                "Unable to determine IP address from check.torproject.org. "
+                "The site was successfully contacted but the result could "
+                "not be parsed. Maybe the service is down? Falling back to "
+                "finding your IP locally...")
+            ip_address = find_ip_address_local()
+    except IOError:
+        logging.warning(
+            "An IOError occured attempting to contact check.torproject.org. "
+            "This will affect measurements unless your machine has a public "
+            "IP address. Falling back to finding your IP locally...")
+        ip_address = find_ip_address_local()
     return ip_address
 
 def get_random_free_port():
