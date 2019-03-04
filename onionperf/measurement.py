@@ -160,7 +160,7 @@ def logrotate_thread_task(writables, tgen_writable, torctl_writable, docroot, ni
 
 class Measurement(object):
 
-    def __init__(self, tor_bin_path, tgen_bin_path, datadir_path, nickname, oneshot):
+    def __init__(self, tor_bin_path, tgen_bin_path, datadir_path, nickname, oneshot,additional_client_conf=None):
         self.tor_bin_path = tor_bin_path
         self.tgen_bin_path = tgen_bin_path
         self.datadir_path = datadir_path
@@ -172,6 +172,7 @@ class Measurement(object):
         self.hs_v3_service_id = None
         self.www_docroot = "{0}/htdocs".format(self.datadir_path)
         self.base_config = os.environ['BASETORRC'] if "BASETORRC" in os.environ else ""
+        self.additional_client_conf = additional_client_conf
 
     def run(self, do_onion=True, do_inet=True, client_tgen_listen_port=58888, client_tgen_connect_ip='0.0.0.0', client_tgen_connect_port=8080, client_tor_ctl_port=59050, client_tor_socks_port=59000,
              server_tgen_listen_port=8080, server_tor_ctl_port=59051, server_tor_socks_port=59001):
@@ -347,10 +348,12 @@ class Measurement(object):
 
         return tgen_writable
 
-    def __create_tor_config(self, control_port, socks_port, tor_datadir):
+    def __create_tor_config(self, control_port, socks_port, tor_datadir, name):
         tor_config_template = self.base_config + "RunAsDaemon 0\nORPort 0\nDirPort 0\nControlPort {0}\nSocksPort {1}\nSocksListenAddress 127.0.0.1\nClientOnly 1\n\
 WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nUseEntryGuards 0\nDataDirectory {2}\nLog INFO stdout\n"
         tor_config = tor_config_template.format(control_port, socks_port, tor_datadir)
+        if name == "client" and self.additional_client_conf:
+            tor_config += self.additional_client_conf
         return tor_config
 
     def __start_tor_client(self, control_port, socks_port):
@@ -364,7 +367,8 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nUseEntryGuards
         tor_datadir = "{0}/tor-{1}".format(self.datadir_path, name)
 
         if not os.path.exists(tor_datadir): os.makedirs(tor_datadir)
-        tor_config = self.__create_tor_config(control_port,socks_port,tor_datadir)
+        tor_config = self.__create_tor_config(control_port,socks_port,tor_datadir,name)
+
         tor_logpath = "{0}/onionperf.tor.log".format(tor_datadir)
         tor_writable = util.FileWritable(tor_logpath)
         logging.info("Logging Tor {0} process output to {1}".format(name, tor_logpath))
