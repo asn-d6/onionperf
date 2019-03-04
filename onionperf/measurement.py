@@ -160,7 +160,7 @@ def logrotate_thread_task(writables, tgen_writable, torctl_writable, docroot, ni
 
 class Measurement(object):
 
-    def __init__(self, tor_bin_path, tgen_bin_path, datadir_path, nickname, oneshot,additional_client_conf=None):
+    def __init__(self, tor_bin_path, tgen_bin_path, datadir_path, nickname, oneshot, additional_client_conf=None, torclient_conf_file=None, torserver_conf_file=None):
         self.tor_bin_path = tor_bin_path
         self.tgen_bin_path = tgen_bin_path
         self.datadir_path = datadir_path
@@ -173,6 +173,8 @@ class Measurement(object):
         self.www_docroot = "{0}/htdocs".format(self.datadir_path)
         self.base_config = os.environ['BASETORRC'] if "BASETORRC" in os.environ else ""
         self.additional_client_conf = additional_client_conf
+        self.torclient_conf_file = torclient_conf_file
+        self.torserver_conf_file = torserver_conf_file
 
     def run(self, do_onion=True, do_inet=True, client_tgen_listen_port=58888, client_tgen_connect_ip='0.0.0.0', client_tgen_connect_port=8080, client_tor_ctl_port=59050, client_tor_socks_port=59000,
              server_tgen_listen_port=8080, server_tor_ctl_port=59051, server_tor_socks_port=59001):
