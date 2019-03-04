@@ -368,6 +368,12 @@ class Measurement(object):
         tor_config_template = self.base_config + "RunAsDaemon 0\nORPort 0\nDirPort 0\nControlPort {0}\nSocksPort {1}\nSocksListenAddress 127.0.0.1\nClientOnly 1\n\
 WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory {2}\nLog INFO stdout\n"
         tor_config = tor_config_template.format(control_port, socks_port, tor_datadir)
+        if name == "server" and self.torserver_conf_file:
+            with open(self.torserver_conf_file, 'r') as f:
+                tor_config += f.read()
+        if name == "client" and self.torclient_conf_file:
+            with open(self.torclient_conf_file, 'r') as f:
+                tor_config = tor_config + f.read()
         if name == "client" and self.additional_client_conf:
             tor_config += self.additional_client_conf
         if not 'UseEntryGuards' in tor_config and not 'UseBridges' in tor_config:
