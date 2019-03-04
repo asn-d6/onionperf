@@ -349,6 +349,20 @@ class Measurement(object):
         return tgen_writable
 
     def __create_tor_config(self, control_port, socks_port, tor_datadir, name):
+        """
+        This function generates a tor configuration based on a default
+        template. This template is appended to any tor configuration inherited
+        via the BASETORRC environment variable. Configuration in any additional
+        tor client/server config files are then appended depending on whether
+        "name" points to client or server. Any additional client configuration
+        specified as a string is also added if the client is being configured.
+
+        Finally, if there is no specific mention of either using Entry Guards
+        (by default enabled) or bridges (by default disabled) the configurator
+        appends an option to override the use of Entry Guards, to avoid
+        measuring the guard node multiple times.
+        """
+
         tor_config_template = self.base_config + "RunAsDaemon 0\nORPort 0\nDirPort 0\nControlPort {0}\nSocksPort {1}\nSocksListenAddress 127.0.0.1\nClientOnly 1\n\
 WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nUseEntryGuards 0\nDataDirectory {2}\nLog INFO stdout\n"
         tor_config = tor_config_template.format(control_port, socks_port, tor_datadir)
