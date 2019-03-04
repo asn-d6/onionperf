@@ -350,7 +350,7 @@ class Measurement(object):
 
         return tgen_writable
 
-    def __create_tor_config(self, control_port, socks_port, tor_datadir, name):
+    def create_tor_config(self, control_port, socks_port, tor_datadir, name):
         """
         This function generates a tor configuration based on a default
         template. This template is appended to any tor configuration inherited
@@ -383,7 +383,7 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nUseEntryGuards
         tor_datadir = "{0}/tor-{1}".format(self.datadir_path, name)
 
         if not os.path.exists(tor_datadir): os.makedirs(tor_datadir)
-        tor_config = self.__create_tor_config(control_port,socks_port,tor_datadir,name)
+        tor_config = self.create_tor_config(control_port,socks_port,tor_datadir,name)
 
         tor_logpath = "{0}/onionperf.tor.log".format(tor_datadir)
         tor_writable = util.FileWritable(tor_logpath)
