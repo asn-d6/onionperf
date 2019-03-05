@@ -134,6 +134,11 @@ def get_ip_address():
     check.torproject.org service. If it is not possible to reach the service,
     or to parse the result recieved, it will fall back to determining the local
     IP address used for outbound connections.
+
+    :returns: string
+    :raises IOError: In case of network or DNS failure, reaching check.torproject.org \
+    will fail. The user is notified this may affect measurements and we fail over to\
+    calling util.find_ip_address_local()
     """
     ip_address = None
     try:
