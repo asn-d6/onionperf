@@ -114,7 +114,16 @@ def do_dates_match(date1, date2):
         return False
 
 def find_ip_address_url(data):
-    ip_address = None
+    """
+    Parses a string using a regular expression for identifying IPv4 addressses.
+    If more than one IP address is found, only the first one is returned.
+    If no IP address is found, the function returns an empty string.
+
+    :param data: string
+    :returns: string
+    """
+
+    ip_address = ""
     if data is not None and len(data) > 0:
         ip_list = re.findall(r'[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}', data)
         if ip_list is not None and len(ip_list) > 0:
@@ -141,7 +150,7 @@ def get_ip_address():
     try:
         data = urllib.urlopen('https://check.torproject.org/').read()
         ip_address = find_ip_address_url(data)
-        if ip_address is None:
+        if not ip_address:
             logging.error(
                 "Unable to determine IP address from check.torproject.org. "
                 "The site was successfully contacted but the result could "
