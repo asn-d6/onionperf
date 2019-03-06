@@ -131,6 +131,14 @@ def find_ip_address_url(data):
     return ip_address
 
 def find_ip_address_local():
+    """
+    Determines the local IP address of the host by opening a socket
+    connection to an external address. In doing so, the address used by the
+    host for initiating connections can be retrieved and then returned.
+
+    :returns: string
+    """
+
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("8.8.8.8", 53))
     ip_address = s.getsockname()[0]
@@ -166,6 +174,14 @@ def get_ip_address():
     return ip_address
 
 def get_random_free_port():
+    """
+    Picks a random high port and checks its availability by opening a
+    socket connection to localhost on this port. If this raises an exception
+    the process is repeated until a free port is found.
+
+    :returns: int
+    """
+
     while True:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         port = random.randint(10000, 60000)
