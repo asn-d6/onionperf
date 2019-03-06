@@ -150,6 +150,24 @@ def main():
         action="store_true", dest="oneshot",
         default=False)
 
+    measure_parser.add_argument('--additional-client-conf',
+        help="""Additional configuration lines for the Tor client, for example bridge lines""",
+        metavar="CONFIG", type=str,
+        action="store", dest="additional_client_conf",
+        default="")
+
+    measure_parser.add_argument('--torclient-conf-file',
+        help="""Configuration file for the Tor client""",
+        metavar="CONFIG", type=str,
+        action="store", dest="torclient_conf_file",
+        default="")
+
+    measure_parser.add_argument('--torserver-conf-file',
+        help="""Configuration file for the Tor server""",
+        metavar="CONFIG", type=str,
+        action="store", dest="torserver_conf_file",
+        default="")
+
     measure_parser.add_argument('--tgen-connect-ip',
         help="""the TGen client connect IP address ADDR, or 0.0.0.0 to do an external IP lookup; must be Internet-accessible for non-onion downloads to work""",
         metavar="ADDR", type=type_str_ip_in,
@@ -368,7 +386,7 @@ def measure(args):
         server_tor_ctl_port = util.get_random_free_port()
         server_tor_socks_port = util.get_random_free_port()
 
-        meas = Measurement(args.torpath, args.tgenpath, args.prefix, args.nickname, args.oneshot)
+        meas = Measurement(args.torpath, args.tgenpath, args.prefix, args.nickname, args.oneshot, args.additional_client_conf, args.torclient_conf_file, args.torserver_conf_file)
         meas.run(do_onion=args.do_onion, do_inet=args.do_inet,
              client_tgen_listen_port=client_tgen_port, client_tgen_connect_ip=client_connect_ip, client_tgen_connect_port=client_connect_port, client_tor_ctl_port=client_tor_ctl_port, client_tor_socks_port=client_tor_socks_port,
              server_tgen_listen_port=server_tgen_port, server_tor_ctl_port=server_tor_ctl_port, server_tor_socks_port=server_tor_socks_port)
