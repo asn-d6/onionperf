@@ -11,13 +11,13 @@ performance statistics are logged to disk, analyzed once per day to
 produce a json stats database and files that can feed into Torperf, and
 can later be used to visualize changes in Tor client performance over time.
 
-For more information, see https://github.com/robgjansen/onionperf  
+For more information, see https://git.torproject.org/onionperf
 For a dockerized setup, see https://github.com/hiromipaw/onionperf-docker
 
 ### Get OnionPerf
 
 ```
-git clone https://github.com/robgjansen/onionperf.git
+git clone https://git.torproject.org/onionperf.git
 cd onionperf
 ```
 
@@ -27,36 +27,37 @@ cd onionperf
   + **TGen** (Shadow >= v1.11.1): cmake, glib2, igraph
   + **OnionPerf**: python
 
-The easiest way to satisfy all system dependencies is to use a package manager.
+The easiest way to satisfy all system dependencies is to use a package manager. TGen is not currently packaged and needs to be built from source.
+Note we only provide support for the current Debian Stable distribution.
 
 ```
-#Fedora/RedHat:
-sudo yum install gcc cmake make glib2 glib2-devel igraph igraph-devel libevent libevent-devel openssl openssl-devel python
-# Ubuntu/Debian:
-sudo apt-get install gcc cmake make libglib2.0 libglib2.0-dev libigraph0 libigraph0-dev libevent libevent-dev openssl openssl-dev python
+sudo apt install cmake make build-essential gcc libigraph0-dev libglib2.0-dev python-dev
 ```
-
-**Note**: in newer distributions, `libevent` may be called `libevent-2.0` and `openssl-dev` may be called `libssl-dev`.
 
 ### Install Python modules
 
-  + **OnionPerf** python modules: stem (>= v1.4.0), lxml, networkx, numpy, matplotlib.
+  + **OnionPerf** python modules: stem (>= v1.7.0), lxml, networkx, numpy, matplotlib.
 
 #### Option 1: Package Manager
 
 The easiest way to satisfy all system dependencies is to use a package manager.
 
 ```
-# Fedora/RedHat:
-sudo yum install python-stem python-lxml python-networkx python-matplotlib numpy scipy
-# Ubuntu/Debian:
-sudo apt-get install python-stem python-lxml python-networkx python-matplotlib python-numpy python-scipy
+apt install tor libxml2-dev python-lxml python-networkx python-scypy python-matplotlib python-numpy
+
+```
+Ensure stem is the latest version for onion v3 service compatiblity, by installing from backports:
+
+```
+echo 'deb http://deb.debian.org/debian stretch-backports main' >> /etc/apt/sources.list
+apt update
+apt-get -t stretch-backports install python-stem
 ```
 
 #### Option 2: pip
 
-Python modules can also be installed using `pip`. The python modules that are required for each
-OnionPerf subcommand are as follows:
+Python modules can also be installed using `pip`. The python modules that are
+required for each OnionPerf subcommand are as follows:
 
   + `onionperf monitor`: stem
   + `onionperf measure`: stem, lxml, networkx
@@ -64,13 +65,9 @@ OnionPerf subcommand are as follows:
   + `onionperf visualize`: scipy, numpy, pylab, matplotlib
 
 You must first satisfy the system/library requirements of each of the python modules.
-
-**Note**: the following commands may not contain all requirements; please update if you find more!
+Note: pip installation is not recommended as software installed by pip is not verified.
 
 ```
-# Fedora/RedHat:
-sudo yum install python-devel libxml2 libxml2-devel libxslt libxslt-devel libpng libpng-devel freetype freetype-devel
-# Ubuntu/Debian:
 sudo apt-get install python-dev libxml2 libxml2-dev libxslt1.1 libxslt1-dev libpng12-0 libpng12-dev libfreetype6 libfreetype6-dev
 ```
 
@@ -97,13 +94,20 @@ large dependencies.
 
 ### Build Tor
 
-**Note**: You can install Tor via the package manager as well, though the
-preferred method is to build from source.
-
-We need at least version 0.2.7.3-rc
+**Note**: You can install Tor with apt, although the
+preferred method is to build from source. To install using apt:
 
 ```
-git clone https://git.torproject.org/tor.git -b release-0.2.7
+sudo apt install tor
+```
+Or, if building from source:
+
+```
+apt install libevent libevent-dev libssl-dev
+```
+
+```
+git clone https://git.torproject.org/tor.git
 cd tor
 ./autogen.sh
 ./configure --disable-asciidoc
@@ -117,12 +121,13 @@ but we will build TGen as an external tool and skip building both the full
 simulator and the TGen simulator plugin.
 
 ```
-git clone https://github.com/shadow/shadow.git
-cd shadow/src/plugin/shadow-plugin-tgen
+git clone https://github.com/shadow/tgen.git
+cd tgen
 mkdir build
 cd build
-cmake .. -DSKIP_SHADOW=ON -DCMAKE_MODULE_PATH=`pwd`/../../../../cmake/
+cmake .. -DCMAKE_INSTALL_PREFIX=/home/$USER/.local
 make
+ln -s build/tgen /usr/bin/tgen
 ```
 
 ### Build and Install OnionPerf
