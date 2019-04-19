@@ -215,6 +215,7 @@ class Measurement(object):
                 general_writables.append(self.__start_tgen_server(server_tgen_listen_port))
 
             if do_onion:
+                logging.info("Onion Service private keys will be placed in {0}".format(self.privatedir_path))
                 tor_writable, torctl_writable = self.__start_tor_server(server_tor_ctl_port, server_tor_socks_port, {client_tgen_connect_port:server_tgen_listen_port})
                 general_writables.append(tor_writable)
                 general_writables.append(torctl_writable)
@@ -381,6 +382,50 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory 
             tor_config += "UseEntryGuards 0"
         return tor_config
 
+    def start_onion_service(self,
+                            control_port,
+                            hs_port_mapping,
+                            key_path,
+                            v3=False):
+        if v3:
+            logging.info("Creating ephemeral hidden service with v3 onions...")
+        else:
+            logging.info("Creating ephemeral hidden service with v2 onions...")
+    
+        with Controller.from_port(port=control_port) as torctl:
+            torctl.authenticate()
+            if not os.path.exists(key_path):
+                response = torctl.create_ephemeral_hidden_service(
+                    hs_port_mapping, 
+                    detached=True,
+                    await_publication=True
+                ) if not v3 else torctl.create_ephemeral_hidden_service(
+                    hs_port_mapping,
+                    detached=True,
+                    await_publication=True,
+                    key_content='ED25519-V3')
+                with open(key_path, 'w') as key_file:
+                    key_file.write('%s:%s' % (response.private_key_type,
+                                              response.private_key))
+            else:
+                with open(key_path) as key_file:
+                    key_type, key_content = key_file.read().split(':', 1)
+                response = torctl.create_ephemeral_hidden_service(
+                    hs_port_mapping,
+                    detached=True,
+                    await_publication=True,
+                    key_content=key_content,
+                    key_type=key_type)
+            if v3:
+                self.hs_v3_service_id = response.service_id
+                self.hs_v3_control_port = control_port
+            else:
+                self.hs_service_id = response.service_id
+                self.hs_control_port = control_port
+    
+            logging.info("Ephemeral hidden service is available at {0}.onion".format(response.service_id))
+        return response.service_id
+
     def __start_tor_client(self, control_port, socks_port):
         return self.__start_tor("client", control_port, socks_port)
 
@@ -390,6 +435,8 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory 
     def __start_tor(self, name, control_port, socks_port, hs_port_mapping=None):
         logging.info("Starting Tor {0} process with ControlPort={1}, SocksPort={2}...".format(name, control_port, socks_port))
         tor_datadir = "{0}/tor-{1}".format(self.datadir_path, name)
+        key_path_v2 = "{0}/os_key_v2".format(self.privatedir_path)
+        key_path_v3 = "{0}/os_key_v3".format(self.privatedir_path)
 
         if not os.path.exists(tor_datadir): os.makedirs(tor_datadir)
         tor_config = self.create_tor_config(control_port,socks_port,tor_datadir,name)
@@ -427,21 +474,9 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory 
         self.threads.append(torctl_helper)
 
         if hs_port_mapping is not None:
-            logging.info("Creating ephemeral hidden service with v2 onions...")
-            with Controller.from_port(port=control_port) as torctl:
-                torctl.authenticate()
-                response = torctl.create_ephemeral_hidden_service(hs_port_mapping, detached=True, await_publication=True)
-                self.hs_service_id = response.service_id
-                self.hs_control_port = control_port
-                logging.info("Ephemeral hidden service is available at {0}.onion".format(response.service_id))
+            self.start_onion_service(control_port, hs_port_mapping, key_path_v2)
+            self.start_onion_service(control_port, hs_port_mapping, key_path_v3, v3=True)
 
-            logging.info("Creating ephemeral hidden service with v3 onions...")
-            with Controller.from_port(port=control_port) as torctl:
-                torctl.authenticate()
-                response = torctl.create_ephemeral_hidden_service(hs_port_mapping, detached=True, await_publication=True, key_content='ED25519-V3')
-                self.hs_v3_service_id = response.service_id
-                self.hs_v3_control_port = control_port
-                logging.info("Ephemeral hidden service is available at {0}.onion".format(response.service_id))
         return tor_writable, torctl_writable
 
     def __get_download_count(self, tgen_logpath):
