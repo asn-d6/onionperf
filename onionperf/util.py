@@ -117,13 +117,13 @@ def find_ip_address_url(data):
     """
     Parses a string using a regular expression for identifying IPv4 addressses.
     If more than one IP address is found, only the first one is returned.
-    If no IP address is found, the function returns an empty string.
+    If no IP address is found, the function returns None .
 
     :param data: string
     :returns: string
     """
 
-    ip_address = ""
+    ip_address = None
     if data is not None and len(data) > 0:
         ip_list = re.findall(r'[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}', data)
         if ip_list is not None and len(ip_list) > 0:
