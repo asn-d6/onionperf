@@ -236,6 +236,9 @@ class Analysis(object):
                                         if decile in xfer_db['elapsed_seconds']['payload_progress'] and xfer_db['elapsed_seconds']['payload_progress'][decile] is not None:
                                             decile_as_int = int(float(decile) * 100)
                                             d['DATAPERC{0}'.format(decile_as_int)] = ts_to_str(xfer_db['unix_ts_start'] + xfer_db['elapsed_seconds']['payload_progress'][decile])
+                                else:
+                                    for i in range(1, 10):
+                                        d.pop('DATAPERC{}0'.format(i))
 
                                 if 'last_byte' in xfer_db['elapsed_seconds']:
                                     d['DATACOMPLETE'] = ts_to_str(xfer_db['unix_ts_start'] + xfer_db['elapsed_seconds']['last_byte'])
