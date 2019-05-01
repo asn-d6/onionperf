@@ -215,6 +215,13 @@ built-in Torperf (50KiB, 1MiB, 5MiB) traffic model""",
         action="store", dest="prefix",
         default=os.getcwd() + "/onionperf-data")
 
+    measure_parser.add_argument('-k', '--key-prefix',
+        help="""a directory PATH prefix where OnionPerf will store its private key files""",
+        metavar="PATH", type=type_str_dir_path_out,
+        action="store", dest="private_prefix",
+        default=os.getcwd() + "/onionperf-private")
+
+
     # analyze
     analyze_parser = sub_parser.add_parser('analyze', description=DESC_ANALYZE, help=HELP_ANALYZE,
         formatter_class=my_formatter_class)
@@ -386,7 +393,7 @@ def measure(args):
         server_tor_ctl_port = util.get_random_free_port()
         server_tor_socks_port = util.get_random_free_port()
 
-        meas = Measurement(args.torpath, args.tgenpath, args.prefix, args.nickname, args.oneshot, args.additional_client_conf, args.torclient_conf_file, args.torserver_conf_file)
+        meas = Measurement(args.torpath, args.tgenpath, args.prefix, args.private_prefix, args.nickname, args.oneshot, args.additional_client_conf, args.torclient_conf_file, args.torserver_conf_file)
         meas.run(do_onion=args.do_onion, do_inet=args.do_inet,
              client_tgen_listen_port=client_tgen_port, client_tgen_connect_ip=client_connect_ip, client_tgen_connect_port=client_connect_port, client_tor_ctl_port=client_tor_ctl_port, client_tor_socks_port=client_tor_socks_port,
              server_tgen_listen_port=server_tgen_port, server_tor_ctl_port=server_tor_ctl_port, server_tor_socks_port=server_tor_socks_port)

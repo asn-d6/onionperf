@@ -160,10 +160,11 @@ def logrotate_thread_task(writables, tgen_writable, torctl_writable, docroot, ni
 
 class Measurement(object):
 
-    def __init__(self, tor_bin_path, tgen_bin_path, datadir_path, nickname, oneshot, additional_client_conf=None, torclient_conf_file=None, torserver_conf_file=None):
+    def __init__(self, tor_bin_path, tgen_bin_path, datadir_path, privatedir_path, nickname, oneshot, additional_client_conf=None, torclient_conf_file=None, torserver_conf_file=None):
         self.tor_bin_path = tor_bin_path
         self.tgen_bin_path = tgen_bin_path
         self.datadir_path = datadir_path
+        self.privatedir_path = privatedir_path
         self.oneshot = oneshot
         self.nickname = nickname
         self.threads = None
