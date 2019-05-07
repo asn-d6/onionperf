@@ -19,6 +19,18 @@ from stem.response import ControlMessage, convert
 # onionperf imports
 import util
 
+ERRORS = {  'AUTH' : 'TGEN/AUTH',
+            'READ' : 'TGEN/READ',
+            'STALLOUT' : 'TGEN/STALLOUT',
+            'TIMEOUT' : 'TGEN/TIMEOUT',
+            'PROXY' : 'TOR',
+            'PROXY_CANT_ATTACH' : 'TOR/CANT_ATTACH',
+            'PROXY_DESTROY' : 'TOR/DESTROY',
+            'PROXY_END_TIMEOUT' : 'TOR/END/TIMEOUT',
+            'PROXY_END_CONNECTREFUSED' : 'TOR/END/CONNECTREFUSED',
+            'PROXY_RESOLVEFAILED' : 'TOR/RESOLVEFAILED',
+            'PROXY_TIMEOUT' : 'TOR/TIMEOUT' }
+
 class Analysis(object):
 
     def __init__(self, nickname=None, ip_address=None):
@@ -192,6 +204,7 @@ class Analysis(object):
                         d['FILESIZE'] = xfer_db['filesize_bytes']
                         d['READBYTES'] = xfer_db['total_bytes_read']
                         d['WRITEBYTES'] = xfer_db['total_bytes_write']
+                        d['DIDTIMEOUT'] = 0
 
                         def ts_to_str(ts): return"{0:.02f}".format(ts)
 
@@ -243,13 +256,18 @@ class Analysis(object):
                                 if 'last_byte' in xfer_db['elapsed_seconds']:
                                     d['DATACOMPLETE'] = ts_to_str(xfer_db['unix_ts_start'] + xfer_db['elapsed_seconds']['last_byte'])
 
-                        # could be ioerror or timeout or etc, but i dont think torperf distinguishes these
-                        d['DIDTIMEOUT'] = 1 if xfer_db['is_error'] is True else 0
+                        if xfer_db['is_error']:
+                            d['DIDTIMEOUT'] = 1 # could be ioerror or timeout or etc, torperf did not distinguish
+                            d['ERRORCODE'] = xfer_db['error_code'] # this field is onionperf specific
 
                         # now get the tor parts
                         srcport = int(xfer_db['endpoint_local'].split(':')[2])
                         if srcport in streams_by_srcport:
                             stream_db = streams_by_srcport[srcport]
+                            if 'failure_reason_local' in stream_db.keys():
+                                d['ERRORCODE'] += '_' +  stream_db['failure_reason_local']
+                                if 'failure_reason_remote' in stream_db.keys():
+                                    d['ERRORCODE'] += '_' +  stream_db['failure_reason_remote']
                             circid = int(stream_db['circuit_id'] or 0)
                             if circid in circuits:
                                 circuit_db = circuits[circid]
@@ -262,6 +280,8 @@ class Analysis(object):
                                 d['CIRC_ID'] = circid
                                 d['USED_AT'] = stream_db['unix_ts_end']
                                 d['USED_BY'] = int(stream_db['stream_id'])
+                        if 'ERRORCODE' in d.keys():
+                            d['ERRORCODE'] = ERRORS[d['ERRORCODE']]
 
                         output.write("@type torperf 1.1\r\n")
                         output_str = ' '.join("{0}={1}".format(k, d[k]) for k in sorted(d.keys()) if d[k] is not None).strip()
