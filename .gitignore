@@ -4,3 +4,4 @@ venv
 *.json.xz
 *.pdf
 *.pyc
+onionperf/docs/_build
