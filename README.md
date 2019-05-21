@@ -43,7 +43,7 @@ sudo apt install cmake make build-essential gcc libigraph0-dev libglib2.0-dev py
 The easiest way to satisfy all system dependencies is to use a package manager.
 
 ```
-apt install tor libxml2-dev python-lxml python-networkx python-scypy python-matplotlib python-numpy
+apt install tor libxml2-dev python-lxml python-networkx python-scipy python-matplotlib python-numpy
 
 ```
 Ensure stem is the latest version for onion v3 service compatiblity, by installing from backports:

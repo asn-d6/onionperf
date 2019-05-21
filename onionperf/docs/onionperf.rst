@@ -53,7 +53,7 @@ Once TGen is installed, follow these instructions to install OnionPerf:
 2. Install dependencies
 ::
 
- apt install tor libxml2-dev python-dev python-lxml python-networkx python-scypy python-matplotlib python-numpy python-netifaces python-ipaddress
+ apt install tor libxml2-dev python-dev python-lxml python-networkx python-scipy python-matplotlib python-numpy python-netifaces python-ipaddress
 
 Ensure stem is the latest version for v3 Onion services to work, this can be installed from backports:
 ::
