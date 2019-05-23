@@ -241,7 +241,8 @@ class Measurement(object):
 
                 logging.info("Bootstrapping finished, entering heartbeat loop")
                 time.sleep(1)
-                logging.info("Onionperf is running in Oneshot mode. It will download a 5M file and shut down gracefully...")
+                if self.oneshot:
+                    logging.info("Onionperf is running in Oneshot mode. It will download a 5M file and shut down gracefully...")
                 while True:
                     # TODO add status update of some kind? maybe the number of files in the www directory?
                     # logging.info("Heartbeat: {0} downloads have completed successfully".format(self.__get_download_count(tgen_client_writable.filename)))
