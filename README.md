@@ -14,6 +14,37 @@ can later be used to visualize changes in Tor client performance over time.
 For more information, see https://git.torproject.org/onionperf
 For a dockerized setup, see https://github.com/hiromipaw/onionperf-docker
 
+## Quick deployment instructions
+
+These are the quick deployment instructions for the current Debian stable distribution.
+
+```
+sudo apt install git cmake make build-essential gcc libigraph0-dev libglib2.0-dev python-dev libxml2-dev python-lxml python-networkx python-scipy python-matplotlib python-numpy libevent-dev libssl-dev
+
+echo 'deb http://deb.debian.org/debian stretch-backports main' >> /etc/apt/sources.list
+apt update
+apt-get -t stretch-backports install python-stem tor
+
+
+git clone https://github.com/shadow/tgen.git
+cd tgen
+mkdir build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=/home/$USER/.local
+make
+ln -s ~/tgen/build/tgen /usr/bin/tgen
+
+git clone https://github.com/ana-cc/onionperf
+cd onionperf
+git checkout steins_gate
+sudo python setup.py build
+sudo python setup.py install
+```
+
+## Step-by-step installation instructions
+
+Here you can find more detailed instructions for the current Debian stable distribution.
+
 ### Get OnionPerf
 
 ```
@@ -95,10 +126,12 @@ large dependencies.
 ### Build Tor
 
 **Note**: You can install Tor with apt, although the
-preferred method is to build from source. To install using apt:
+preferred method is to build from source. To install using from backports:
 
 ```
-sudo apt install tor
+echo 'deb http://deb.debian.org/debian stretch-backports main' >> /etc/apt/sources.list
+apt update
+apt-get -t stretch-backports install tor
 ```
 Or, if building from source:
 
