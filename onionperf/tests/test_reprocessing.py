@@ -25,7 +25,7 @@ def test_log_collection_tgen():
 
 def test_log_collection_torctl():
     log_list = reprocessing.collect_logs(DATA_DIR, '*torctl.log')
-    well_known_list = [ DATA_DIR + 'logs/onionperf.torctl.log', DATA_DIR + 'logs/onionperf_2019-01-10_23:59:59.torctl.log' ]
+    well_known_list = [ DATA_DIR + 'logs/onionperf_2019-01-10_23:59:59.torctl.log', DATA_DIR + 'logs/onionperf.torctl.log' ]
     assert_equals(log_list, well_known_list )
 
 def test_log_match():
