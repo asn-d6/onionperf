@@ -1,7 +1,7 @@
 import os
 import pkg_resources
 from nose.tools import *
-from onionperf import analysis
+from onionperf import analysis, util
 
 
 def absolute_data_path(relative_path=""):
@@ -11,10 +11,10 @@ def absolute_data_path(relative_path=""):
     return pkg_resources.resource_filename("onionperf",
                                            "tests/data/" + relative_path)
 
-
 DATA_DIR = absolute_data_path()
 LINE_ERROR = '2019-04-22 14:41:20 1555940480.647663 [message] [shd-tgen-transfer.c:1504] [_tgentransfer_log] [transfer-error] transport TCP,12,localhost:127.0.0.1:46878,localhost:127.0.0.1:43735,dc34og3c3aqdqntblnxkstzfvh7iy7llojd4fi5j23y2po32ock2k7ad.onion:0.0.0.0:8080,state=ERROR,error=READ transfer transfer5m,4,cyan,GET,5242880,(null),0,state=ERROR,error=PROXY total-bytes-read=0 total-bytes-write=0 payload-bytes-read=0/5242880 (0.00%) usecs-to-socket-create=11 usecs-to-socket-connect=210 usecs-to-proxy-init=283 usecs-to-proxy-choice=348 usecs-to-proxy-request=412 usecs-to-proxy-response=-1 usecs-to-command=-1 usecs-to-response=-1 usecs-to-first-byte=-1 usecs-to-last-byte=-1 usecs-to-checksum=-1'
 
+NO_PARSE_LINE = '2018-04-14 21:10:04 1523740204.809894 [message] [shd-tgen-transfer.c:803] [_tgentransfer_log] [transfer-error] transport TCP,17,NULL:37.218.247.40:26006,NULL:0.0.0.0:0,146.0.73.4:146.0.73.4:1313,state=SUCCESS,error=NONE transfer (null),26847,op-nl,NONE,0,(null),0,state=ERROR,error=AUTH total-bytes-read=1 total-bytes-write=0 payload-bytes-write=0/0 (-nan%) usecs-to-socket-create=0 usecs-to-socket-connect=8053676879205 usecs-to-proxy-init=-1 usecs-to-proxy-choice=-1 usecs-to-proxy-request=-1 usecs-to-proxy-response=-1 usecs-to-command=-1 usecs-to-response=-1 usecs-to-first-byte=-1 usecs-to-last-byte=-1 usecs-to-checksum=-1'
 
 def test_transfer_status_event():
     transfer = analysis.TransferStatusEvent(LINE_ERROR)
@@ -186,3 +186,14 @@ def test_transfer_object_end_to_end():
             'filesize_bytes':
             5242880
         })
+
+
+@raises(ZeroDivisionError)
+def test_transfer_status_parse_error():
+    transfer = analysis.TransferStatusEvent(NO_PARSE_LINE)
+    t = analysis.Transfer(transfer.transfer_id)
+    t.add_event(transfer)
+
+def test_parsing_parse_error():
+    parser = analysis.TGenParser()
+    parser.parse(util.DataSource(DATA_DIR + 'parse_error'))

@@ -532,7 +532,6 @@ class TGenParser(Parser):
                     break
             except:
                 logging.warning("TGenParser: skipping line due to parsing error: {0}".format(line))
-                raise
                 continue
         source.close()
 
