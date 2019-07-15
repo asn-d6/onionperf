@@ -58,7 +58,7 @@ def analyze_func(prefix, nick, pair):
     return 1
 
 
-def multiprocess_logs(log_pairs, prefix, nick):
+def multiprocess_logs(log_pairs, prefix, nick=None):
     pool = Pool(cpu_count())
     analyses = None
     try:
