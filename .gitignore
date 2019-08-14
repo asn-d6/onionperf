@@ -5,3 +5,4 @@ venv
 *.pdf
 *.pyc
 onionperf/docs/_build
+.coverage
