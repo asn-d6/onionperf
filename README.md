@@ -19,12 +19,7 @@ For a dockerized setup, see https://github.com/hiromipaw/onionperf-docker
 These are the quick deployment instructions for the current Debian stable distribution.
 
 ```
-sudo apt install git cmake make build-essential gcc libigraph0-dev libglib2.0-dev python-dev libxml2-dev python-lxml python-networkx python-scipy python-matplotlib python-numpy libevent-dev libssl-dev
-
-echo 'deb http://deb.debian.org/debian stretch-backports main' >> /etc/apt/sources.list
-apt update
-apt-get -t stretch-backports install python-stem tor
-
+sudo apt install git cmake make build-essential gcc libigraph0-dev libglib2.0-dev python-dev libxml2-dev python-lxml python-networkx python-scipy python-matplotlib python-numpy libevent-dev libssl-dev python-stem tor
 
 git clone https://github.com/shadow/tgen.git
 cd tgen
@@ -32,11 +27,10 @@ mkdir build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=/home/$USER/.local
 make
-ln -s ~/tgen/build/tgen /usr/bin/tgen
+sudo ln -s ~/tgen/build/tgen /usr/bin/tgen
 
-git clone https://github.com/ana-cc/onionperf
+git clone https://github.com/torproject/onionperf
 cd onionperf
-git checkout steins_gate
 sudo python setup.py build
 sudo python setup.py install
 ```
@@ -74,15 +68,8 @@ sudo apt install cmake make build-essential gcc libigraph0-dev libglib2.0-dev py
 The easiest way to satisfy all system dependencies is to use a package manager.
 
 ```
-apt install tor libxml2-dev python-lxml python-networkx python-scipy python-matplotlib python-numpy
+apt install tor libxml2-dev python-lxml python-networkx python-scipy python-matplotlib python-numpy python-stem
 
-```
-Ensure stem is the latest version for onion v3 service compatiblity, by installing from backports:
-
-```
-echo 'deb http://deb.debian.org/debian stretch-backports main' >> /etc/apt/sources.list
-apt update
-apt-get -t stretch-backports install python-stem
 ```
 
 #### Option 2: pip
