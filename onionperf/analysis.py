@@ -58,6 +58,12 @@ class Analysis(object):
         except:
             return None
 
+    def get_tgen_transfers(self, node):
+        try:
+            return self.json_db['data'][node]['tgen']['transfers']
+        except:
+            return None
+
     def get_tgen_transfers_summary(self, node):
         try:
             return self.json_db['data'][node]['tgen']['transfers_summary']

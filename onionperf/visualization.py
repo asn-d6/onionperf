@@ -8,6 +8,10 @@ import matplotlib; matplotlib.use('Agg')  # for systems without X11
 from matplotlib.backends.backend_pdf import PdfPages
 import pylab, numpy, time
 from abc import abstractmethod, ABCMeta
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+import datetime
 
 '''
 pylab.rcParams.update({
@@ -140,403 +144,183 @@ class TGenVisualization(Visualization):
         if len(self.datasets) > 0:
             prefix = output_prefix + '.' if output_prefix is not None else ''
             ts = time.strftime("%Y-%m-%d_%H:%M:%S")
+            self.__extract_data_frame()
+            self.data.to_csv("{0}tgen.onionperf.viz.{1}.csv".format(prefix, ts))
+            sns.set_context("paper")
             self.page = PdfPages("{0}tgen.onionperf.viz.{1}.pdf".format(prefix, ts))
-            self.__plot_firstbyte()
-            self.__plot_byte_timeseries("time_to_first_byte")
-            self.__plot_lastbyte_all()
-            self.__plot_lastbyte_median()
-            self.__plot_lastbyte_mean()
-            self.__plot_lastbyte_max()
-            self.__plot_byte_timeseries("time_to_last_byte")
-            self.__plot_downloads()
-            self.__plot_downloads_timeseries()
-            self.__plot_errors()
-            self.__plot_errors_timeseries()
-            self.__plot_errsizes_all()
-            self.__plot_errsizes_median()
-            self.__plot_errsizes_mean()
+            self.__plot_firstbyte_ecdf()
+            self.__plot_firstbyte_time()
+            self.__plot_lastbyte_ecdf()
+            self.__plot_lastbyte_box()
+            self.__plot_lastbyte_bar()
+            self.__plot_lastbyte_time()
+            self.__plot_downloads_count()
+            self.__plot_errors_count()
+            self.__plot_errors_time()
             self.page.close()
 
-    def __plot_firstbyte(self):
-        f = None
+    def __extract_data_frame(self):
+        transfers = []
+        for (analysis, label, lineformat) in self.datasets:
+            for client in analysis.get_nodes():
+                tgen_transfers = analysis.get_tgen_transfers(client)
+                for transfer_id, transfer_data in tgen_transfers.items():
+                    transfer = {"transfer_id": transfer_id, "label": label,
+                                "filesize_bytes": transfer_data["filesize_bytes"]}
+                    if "elapsed_seconds" in transfer_data:
+                        s = transfer_data["elapsed_seconds"]
+                        if "command" in s:
+                            if "first_byte" in s:
+                                transfer["time_to_first_byte"] = s["first_byte"] - s["command"]
+                            if "last_byte" in s:
+                                transfer["time_to_last_byte"] = s["last_byte"] - s["command"]
+                    if "error_code" in transfer_data and transfer_data["error_code"] != "NONE":
+                        transfer["error_code"] = transfer_data["error_code"]
+                    if "unix_ts_start" in transfer_data:
+                        transfer["start"] = datetime.datetime.utcfromtimestamp(transfer_data["unix_ts_start"])
+                    transfers.append(transfer)
+        self.data = pd.DataFrame.from_records(transfers, index="transfer_id")
 
-        for (anal, label, lineformat) in self.datasets:
-            fb = []
-            for client in anal.get_nodes():
-                d = anal.get_tgen_transfers_summary(client)
-                if d is None: continue
-                if "time_to_first_byte" in d:
-                    for b in d["time_to_first_byte"]:
-                        if f is None: f = pylab.figure()
-                        for sec in d["time_to_first_byte"][b]: fb.extend(d["time_to_first_byte"][b][sec])
-            if f is not None and len(fb) > 0:
-                x, y = getcdf(fb)
-                pylab.plot(x, y, lineformat, label=label)
+    def __plot_firstbyte_ecdf(self):
+        self.__draw_ecdf(x="time_to_first_byte", hue="label", hue_name="Data set",
+                         data=self.data, title="Time to download first byte",
+                         xlabel="Download time (s)", ylabel="Cumulative Fraction")
 
-        if f is not None:
-            pylab.xlabel("Download Time (s)")
-            pylab.ylabel("Cumulative Fraction")
-            pylab.title("time to download first byte, all clients")
-            pylab.legend(loc="lower right")
-            self.page.savefig()
-            pylab.close()
+    def __plot_firstbyte_time(self):
+        for bytes in self.data["filesize_bytes"].unique():
+            self.__draw_timeplot(x="start", y="time_to_last_byte", hue="label", hue_name="Data set",
+                                 data=self.data[self.data["filesize_bytes"]==bytes],
+                                 title="Time to download first of {0} bytes over time".format(bytes),
+                                 xlabel="Download start time", ylabel="Download time (s)")
 
-    def __plot_lastbyte_all(self):
-        figs = {}
+    def __plot_lastbyte_ecdf(self):
+        for bytes in self.data["filesize_bytes"].unique():
+            self.__draw_ecdf(x="time_to_last_byte", hue="label", hue_name="Data set",
+                             data=self.data[self.data["filesize_bytes"]==bytes],
+                             title="Time to download last of {0} bytes".format(bytes),
+                             xlabel="Download time (s)", ylabel="Cumulative Fraction")
 
-        for (anal, label, lineformat) in self.datasets:
-            lb = {}
-            for client in anal.get_nodes():
-                d = anal.get_tgen_transfers_summary(client)
-                if d is None: continue
-                if "time_to_last_byte" in d:
-                    for b in d["time_to_last_byte"]:
-                        bytes = int(b)
-                        if bytes not in figs: figs[bytes] = pylab.figure()
-                        if bytes not in lb: lb[bytes] = []
-                        for sec in d["time_to_last_byte"][b]: lb[bytes].extend(d["time_to_last_byte"][b][sec])
-            for bytes in lb:
-                x, y = getcdf(lb[bytes])
-                pylab.figure(figs[bytes].number)
-                pylab.plot(x, y, lineformat, label=label)
+    def __plot_lastbyte_box(self):
+        for bytes in self.data["filesize_bytes"].unique():
+            self.__draw_boxplot(x="label", y="time_to_last_byte",
+                                data=self.data[self.data["filesize_bytes"]==bytes],
+                                title="Time to download last of {0} bytes".format(bytes),
+                                xlabel="Data set", ylabel="Download time (s)")
 
-        for bytes in sorted(figs.keys()):
-            pylab.figure(figs[bytes].number)
-            pylab.xlabel("Download Time (s)")
-            pylab.ylabel("Cumulative Fraction")
-            pylab.title("time to download {0} bytes, all downloads".format(bytes))
-            pylab.legend(loc="lower right")
-            self.page.savefig()
-            pylab.close()
+    def __plot_lastbyte_bar(self):
+        for bytes in self.data["filesize_bytes"].unique():
+            self.__draw_barplot(x="label", y="time_to_last_byte",
+                                data=self.data[self.data["filesize_bytes"]==bytes],
+                                title="Mean time to download last of {0} bytes".format(bytes),
+                                xlabel="Data set", ylabel="Downloads time (s)")
 
-    def __plot_lastbyte_median(self):
-        figs = {}
+    def __plot_lastbyte_time(self):
+        for bytes in self.data["filesize_bytes"].unique():
+            self.__draw_timeplot(x="start", y="time_to_last_byte", hue="label", hue_name="Data set",
+                                 data=self.data[self.data["filesize_bytes"] == bytes],
+                                 title="Time to download last of {0} bytes over time".format(bytes),
+                                 xlabel="Download start time", ylabel="Download time (s)")
 
-        for (anal, label, lineformat) in self.datasets:
-            lb = {}
-            for client in anal.get_nodes():
-                d = anal.get_tgen_transfers_summary(client)
-                if d is None: continue
-                if "time_to_last_byte" in d:
-                    for b in d["time_to_last_byte"]:
-                        bytes = int(b)
-                        if bytes not in figs: figs[bytes] = pylab.figure()
-                        if bytes not in lb: lb[bytes] = []
-                        client_lb_list = []
-                        for sec in d["time_to_last_byte"][b]: client_lb_list.extend(d["time_to_last_byte"][b][sec])
-                        lb[bytes].append(numpy.median(client_lb_list))
-            for bytes in lb:
-                x, y = getcdf(lb[bytes])
-                pylab.figure(figs[bytes].number)
-                pylab.plot(x, y, lineformat, label=label)
+    def __plot_downloads_count(self):
+        for bytes in self.data["filesize_bytes"].unique():
+            self.__draw_countplot(x="label",
+                                 data=self.data[self.data["filesize_bytes"] == bytes],
+                                 xlabel="Data set", ylabel="Downloads completed (#)",
+                                 title="Number of downloads of {0} bytes completed".format(bytes))
 
-        for bytes in sorted(figs.keys()):
-            pylab.figure(figs[bytes].number)
-            pylab.xlabel("Download Time (s)")
-            pylab.ylabel("Cumulative Fraction")
-            pylab.title("median time to download {0} bytes, each client".format(bytes))
-            pylab.legend(loc="lower right")
-            self.page.savefig()
-            pylab.close()
+    def __plot_errors_count(self):
+        if "error_code" in self.data.columns:
+            self.__draw_countplot(x="error_code", hue="label", hue_name="Data set", data=self.data,
+                                  xlabel="Error code", ylabel="Downloads failed (#)",
+                                  title="Number of downloads failed")
 
-    def __plot_lastbyte_mean(self):
-        figs = {}
+    def __plot_errors_time(self):
+        if "error_code" in self.data.columns:
+            self.__draw_stripplot(x="start", y="error_code", hue="label", hue_name="Data set",
+                                 data = self.data,
+                                 xlabel="Download start time", ylabel="Error code",
+                                 title="Downloads failed over time")
 
-        for (anal, label, lineformat) in self.datasets:
-            lb = {}
-            for client in anal.get_nodes():
-                d = anal.get_tgen_transfers_summary(client)
-                if d is None: continue
-                if "time_to_last_byte" in d:
-                    for b in d["time_to_last_byte"]:
-                        bytes = int(b)
-                        if bytes not in figs: figs[bytes] = pylab.figure()
-                        if bytes not in lb: lb[bytes] = []
-                        client_lb_list = []
-                        for sec in d["time_to_last_byte"][b]: client_lb_list.extend(d["time_to_last_byte"][b][sec])
-                        lb[bytes].append(numpy.mean(client_lb_list))
-            for bytes in lb:
-                x, y = getcdf(lb[bytes])
-                pylab.figure(figs[bytes].number)
-                pylab.plot(x, y, lineformat, label=label)
+    def __draw_ecdf(self, x, hue, hue_name, data, title, xlabel, ylabel):
+        data = data.dropna(subset=[x])
+        p0 = data[x].quantile(q=0.0, interpolation="lower")
+        p99 = data[x].quantile(q=0.99, interpolation="higher")
+        ranks = data.groupby(hue)[x].rank(pct=True)
+        ranks.name = "rank_pct"
+        result = pd.concat([data[[hue, x]], ranks], axis=1)
+        result = result.append(pd.DataFrame({hue: data[hue].unique(),
+                       x: p0 - (p99 - p0) * 0.05, "rank_pct": 0.0}),
+                       ignore_index=True, sort=False)
+        result = result.append(pd.DataFrame({hue: data[hue].unique(),
+                       x: p99 + (p99 - p0) * 0.05, "rank_pct": 1.0}),
+                       ignore_index=True, sort=False)
+        result = result.rename(columns={hue: hue_name})
+        plt.figure()
+        g = sns.lineplot(data=result, x=x, y="rank_pct",
+                         hue=hue_name, drawstyle="steps-post")
+        g.set(title=title, xlabel=xlabel, ylabel=ylabel,
+              xlim=(p0 - (p99 - p0) * 0.03, p99 + (p99 - p0) * 0.03))
+        sns.despine()
+        self.page.savefig()
+        plt.close()
 
-        for bytes in sorted(figs.keys()):
-            pylab.figure(figs[bytes].number)
-            pylab.xlabel("Download Time (s)")
-            pylab.ylabel("Cumulative Fraction")
-            pylab.title("mean time to download {0} bytes, each client".format(bytes))
-            pylab.legend(loc="lower right")
-            self.page.savefig()
-            pylab.close()
+    def __draw_timeplot(self, x, y, hue, hue_name, data, title, xlabel, ylabel):
+        plt.figure()
+        data = data.dropna(subset=[y])
+        data = data.rename(columns={hue: hue_name})
+        xmin = data[x].min()
+        xmax = data[x].max()
+        ymax = data[y].max()
+        g = sns.scatterplot(data=data, x=x, y=y, hue=hue_name, alpha=0.5)
+        g.set(title=title, xlabel=xlabel, ylabel=ylabel,
+              xlim=(xmin - 0.03 * (xmax - xmin), xmax + 0.03 * (xmax - xmin)),
+              ylim=(-0.05 * ymax, ymax * 1.05))
+        plt.xticks(rotation=10)
+        sns.despine()
+        self.page.savefig()
+        plt.close()
 
-    def __plot_lastbyte_max(self):
-        figs = {}
+    def __draw_boxplot(self, x, y, data, title, xlabel, ylabel):
+        plt.figure()
+        data = data.dropna(subset=[y])
+        g = sns.boxplot(data=data, x=x, y=y, sym="")
+        g.set(title=title, xlabel=xlabel, ylabel=ylabel, ylim=(0, None))
+        sns.despine()
+        self.page.savefig()
+        plt.close()
 
-        for (anal, label, lineformat) in self.datasets:
-            lb = {}
-            for client in anal.get_nodes():
-                d = anal.get_tgen_transfers_summary(client)
-                if d is None: continue
-                if "time_to_last_byte" in d:
-                    for b in d["time_to_last_byte"]:
-                        bytes = int(b)
-                        if bytes not in figs: figs[bytes] = pylab.figure()
-                        if bytes not in lb: lb[bytes] = []
-                        client_lb_list = []
-                        for sec in d["time_to_last_byte"][b]: client_lb_list.extend(d["time_to_last_byte"][b][sec])
-                        lb[bytes].append(numpy.max(client_lb_list))
-            for bytes in lb:
-                x, y = getcdf(lb[bytes])
-                pylab.figure(figs[bytes].number)
-                pylab.plot(x, y, lineformat, label=label)
+    def __draw_barplot(self, x, y, data, title, xlabel, ylabel):
+        plt.figure()
+        data = data.dropna(subset=[y])
+        g = sns.barplot(data=data, x=x, y=y, ci=None)
+        g.set(title=title, xlabel=xlabel, ylabel=ylabel)
+        sns.despine()
+        self.page.savefig()
+        plt.close()
 
-        for bytes in sorted(figs.keys()):
-            pylab.figure(figs[bytes].number)
-            pylab.xlabel("Download Time (s)")
-            pylab.ylabel("Cumulative Fraction")
-            pylab.title("max time to download {0} bytes, each client".format(bytes))
-            pylab.legend(loc="lower right")
-            self.page.savefig()
-            pylab.close()
+    def __draw_countplot(self, x, data, title, xlabel, ylabel, hue=None, hue_name=None):
+        plt.figure()
+        if hue is not None:
+            data = data.rename(columns={hue: hue_name})
+        g = sns.countplot(data=data.dropna(subset=[x]), x=x, hue=hue_name)
+        g.set(xlabel=xlabel, ylabel=ylabel, title=title)
+        sns.despine()
+        self.page.savefig()
+        plt.close()
 
-    def __plot_byte_timeseries(self, bytekey="time_to_last_byte"):
-        figs = {}
-
-        for (anal, label, lineformat) in self.datasets:
-            lb = {}
-            for client in anal.get_nodes():
-                d = anal.get_tgen_transfers_summary(client)
-                if d is None: continue
-                if bytekey in d:
-                    for b in d[bytekey]:
-                        bytes = int(b)
-                        if bytes not in figs: figs[bytes] = pylab.figure()
-                        if bytes not in lb: lb[bytes] = {}
-                        for sec in d[bytekey][b]:
-                            if sec not in lb[bytes]: lb[bytes][sec] = []
-                            lb[bytes][sec].extend(d[bytekey][b][sec])
-            for bytes in lb:
-                pylab.figure(figs[bytes].number)
-                x = [sec for sec in lb[bytes]]
-                x.sort()
-                y = [numpy.mean(lb[bytes][sec]) for sec in x]
-                pylab.plot(x, y, lineformat, label=label)
-
-        for bytes in sorted(figs.keys()):
-            pylab.figure(figs[bytes].number)
-            pylab.xlabel("Tick (s)")
-            pylab.ylabel("Download Time (s)")
-            pylab.title("mean time to download {0} of {1} bytes, all clients over time".format('first' if 'first' in bytekey else 'last', bytes))
-            pylab.legend(loc="lower right")
-            self.page.savefig()
-            pylab.close()
-
-    def __plot_downloads(self):
-        figs = {}
-
-        for (anal, label, lineformat) in self.datasets:
-            dls = {}
-            for client in anal.get_nodes():
-                d = anal.get_tgen_transfers_summary(client)
-                if d is None: continue
-                if "time_to_last_byte" in d:
-                    for b in d["time_to_last_byte"]:
-                        bytes = int(b)
-                        if bytes not in figs: figs[bytes] = pylab.figure()
-                        if bytes not in dls: dls[bytes] = {}
-                        if client not in dls[bytes]: dls[bytes][client] = 0
-                        for sec in d["time_to_last_byte"][b]: dls[bytes][client] += len(d["time_to_last_byte"][b][sec])
-            for bytes in dls:
-                x, y = getcdf(list(dls[bytes].values()), shownpercentile=1.0)
-                pylab.figure(figs[bytes].number)
-                pylab.plot(x, y, lineformat, label=label)
-
-        for bytes in sorted(figs.keys()):
-            pylab.figure(figs[bytes].number)
-            pylab.xlabel("Downloads Completed (\#)")
-            pylab.ylabel("Cumulative Fraction")
-            pylab.title("number of {0} byte downloads completed, each client".format(bytes))
-            pylab.legend(loc="lower right")
-            self.page.savefig()
-            pylab.close()
-
-    def __plot_downloads_timeseries(self):
-        figs = {}
-
-        for (anal, label, lineformat) in self.datasets:
-            dls = {}
-            for client in anal.get_nodes():
-                d = anal.get_tgen_transfers_summary(client)
-                if d is None: continue
-                if "time_to_last_byte" in d:
-                    for b in d["time_to_last_byte"]:
-                        bytes = int(b)
-                        if bytes not in figs: figs[bytes] = pylab.figure()
-                        if bytes not in dls: dls[bytes] = {}
-                        for sec in d["time_to_last_byte"][b]:
-                            if sec not in dls[bytes]: dls[bytes][sec] = 0
-                            dls[bytes][sec] += len(d["time_to_last_byte"][b][sec])
-            for bytes in dls:
-                pylab.figure(figs[bytes].number)
-                x = [sec for sec in dls[bytes]]
-                x.sort()
-                y = [dls[bytes][sec] for sec in x]
-                pylab.plot(x, y, lineformat, label=label)
-
-        for bytes in sorted(figs.keys()):
-            pylab.figure(figs[bytes].number)
-            pylab.xlabel("Tick (s)")
-            pylab.ylabel("Downloads Completed (\#)")
-            pylab.title("number of {0} byte downloads completed, all clients over time".format(bytes))
-            pylab.legend(loc="lower right")
-            self.page.savefig()
-            pylab.close()
-
-    def __plot_errors(self):
-        figs = {}
-
-        for (anal, label, lineformat) in self.datasets:
-            dls = {}
-            for client in anal.get_nodes():
-                d = anal.get_tgen_transfers_summary(client)
-                if d is None: continue
-                if "errors" in d:
-                    for code in d["errors"]:
-                        if code not in figs: figs[code] = pylab.figure()
-                        if code not in dls: dls[code] = {}
-                        if client not in dls[code]: dls[code][client] = 0
-                        for sec in d["errors"][code]: dls[code][client] += len(d["errors"][code][sec])
-            for code in dls:
-                x, y = getcdf([dls[code][client] for client in dls[code]], shownpercentile=1.0)
-                pylab.figure(figs[code].number)
-                pylab.plot(x, y, lineformat, label=label)
-
-        for code in sorted(figs.keys()):
-            pylab.figure(figs[code].number)
-            pylab.xlabel("Download Errors (\#)")
-            pylab.ylabel("Cumulative Fraction")
-            pylab.title("number of transfer {0} errors, each client".format(code))
-            pylab.legend(loc="lower right")
-            self.page.savefig()
-            pylab.close()
-
-    def __plot_errors_timeseries(self):
-        figs = {}
-
-        for (anal, label, lineformat) in self.datasets:
-            dls = {}
-            for client in anal.get_nodes():
-                d = anal.get_tgen_transfers_summary(client)
-                if d is None: continue
-                if "errors" in d:
-                    for code in d["errors"]:
-                        if code not in figs: figs[code] = pylab.figure()
-                        if code not in dls: dls[code] = {}
-                        for sec in d["errors"][code]:
-                            if sec not in dls[code]: dls[code][sec] = 0
-                            dls[code][sec] += len(d["errors"][code][sec])
-            for code in dls:
-                pylab.figure(figs[code].number)
-                x = [sec for sec in dls[code]]
-                x.sort()
-                y = [dls[code][sec] for sec in x]
-                pylab.plot(x, y, lineformat, label=label)
-
-        for code in sorted(figs.keys()):
-            pylab.figure(figs[code].number)
-            pylab.xlabel("Tick (s)")
-            pylab.ylabel("Download Errors (\#)")
-            pylab.title("number of transfer {0} errors, all clients over time".format(code))
-            pylab.legend(loc="lower right")
-            self.page.savefig()
-            pylab.close()
-
-    def __plot_errsizes_all(self):
-        figs = {}
-
-        for (anal, label, lineformat) in self.datasets:
-            err = {}
-            for client in anal.get_nodes():
-                d = anal.get_tgen_transfers_summary(client)
-                if d is None: continue
-                if "errors" in d:
-                    for code in d["errors"]:
-                        if code not in figs: figs[code] = pylab.figure()
-                        if code not in err: err[code] = []
-                        client_err_list = []
-                        for sec in d["errors"][code]: client_err_list.extend(d["errors"][code][sec])
-                        for b in client_err_list: err[code].append(int(b) / 1024.0)
-            for code in err:
-                x, y = getcdf(err[code])
-                pylab.figure(figs[code].number)
-                pylab.plot(x, y, lineformat, label=label)
-
-        for code in sorted(figs.keys()):
-            pylab.figure(figs[code].number)
-            pylab.xlabel("Data Transferred (KiB)")
-            pylab.ylabel("Cumulative Fraction")
-            pylab.title("bytes transferred before {0} error, all downloads".format(code))
-            pylab.legend(loc="lower right")
-            self.page.savefig()
-            pylab.close()
-
-    def __plot_errsizes_median(self):
-        figs = {}
-
-        for (anal, label, lineformat) in self.datasets:
-            err = {}
-            for client in anal.get_nodes():
-                d = anal.get_tgen_transfers_summary(client)
-                if d is None: continue
-                if "errors" in d:
-                    for code in d["errors"]:
-                        if code not in figs: figs[code] = pylab.figure()
-                        if code not in err: err[code] = []
-                        client_err_list = []
-                        for sec in d["errors"][code]: client_err_list.extend(d["errors"][code][sec])
-                        err[code].append(numpy.median(client_err_list) / 1024.0)
-            for code in err:
-                x, y = getcdf(err[code])
-                pylab.figure(figs[code].number)
-                pylab.plot(x, y, lineformat, label=label)
-
-        for code in sorted(figs.keys()):
-            pylab.figure(figs[code].number)
-            pylab.xlabel("Data Transferred (KiB)")
-            pylab.ylabel("Cumulative Fraction")
-            pylab.title("median bytes transferred before {0} error, each client".format(code))
-            pylab.legend(loc="lower right")
-            self.page.savefig()
-            pylab.close()
-
-    def __plot_errsizes_mean(self):
-        figs = {}
-
-        for (anal, label, lineformat) in self.datasets:
-            err = {}
-            for client in anal.get_nodes():
-                d = anal.get_tgen_transfers_summary(client)
-                if d is None: continue
-                if "errors" in d:
-                    for code in d["errors"]:
-                        if code not in figs: figs[code] = pylab.figure()
-                        if code not in err: err[code] = []
-                        client_err_list = []
-                        for sec in d["errors"][code]: client_err_list.extend(d["errors"][code][sec])
-                        err[code].append(numpy.mean(client_err_list) / 1024.0)
-            for code in err:
-                x, y = getcdf(err[code])
-                pylab.figure(figs[code].number)
-                pylab.plot(x, y, lineformat, label=label)
-
-        for code in sorted(figs.keys()):
-            pylab.figure(figs[code].number)
-            pylab.xlabel("Data Transferred (KiB)")
-            pylab.ylabel("Cumulative Fraction")
-            pylab.title("mean bytes transferred before {0} error, each client".format(code))
-            pylab.legend(loc="lower right")
-            self.page.savefig()
-            pylab.close()
+    def __draw_stripplot(self, x, y, hue, hue_name, data, title, xlabel, ylabel):
+        plt.figure()
+        data = data.rename(columns={hue: hue_name})
+        xmin = data[x].min()
+        xmax = data[x].max()
+        data = data.dropna(subset=[y])
+        g = sns.stripplot(data=data, x=x, y=y, hue=hue_name)
+        g.set(title=title, xlabel=xlabel, ylabel=ylabel,
+              xlim=(xmin - 0.03 * (xmax - xmin), xmax + 0.03 * (xmax - xmin)))
+        plt.xticks(rotation=10)
+        sns.despine()
+        self.page.savefig()
+        plt.close()
 
 # helper - compute the window_size moving average over the data in interval
 def movingaverage(interval, window_size):
