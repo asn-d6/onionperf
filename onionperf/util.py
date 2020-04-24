@@ -4,7 +4,7 @@
   See LICENSE for licensing information
 '''
 
-import sys, os, socket, logging, random, re, shutil, datetime, urllib
+import sys, os, socket, logging, random, re, shutil, datetime, urllib, gzip
 from subprocess import Popen, PIPE, STDOUT
 from threading import Lock
 from cStringIO import StringIO
@@ -217,6 +217,9 @@ class DataSource(object):
                 cmd = "xz --decompress --stdout {0}".format(self.filename)
                 xzproc = Popen(cmd.split(), stdout=PIPE)
                 self.source = xzproc.stdout
+            elif self.filename.endswith(".gz"):
+                self.compress = True
+                self.source = gzip.open(self.filename, 'rb')
             else:
                 self.source = open(self.filename, 'r')
 
@@ -300,20 +303,21 @@ class FileWritable(Writable):
     def rotate_file(self, filename_datetime=datetime.datetime.now()):
         self.lock.acquire()
 
-        # build up the new filename with an embedded timestamp
+        # build up the new filename with an embedded timestamp and ending in .gz
         base = os.path.basename(self.filename)
         base_noext = os.path.splitext(os.path.splitext(base)[0])[0]
         ts = filename_datetime.strftime("%Y-%m-%d_%H:%M:%S")
         new_base = base.replace(base_noext, "{0}_{1}".format(base_noext, ts))
-        new_filename = self.filename.replace(base, "log_archive/{0}".format(new_base))
+        new_filename = self.filename.replace(base, "log_archive/{0}.gz".format(new_base))
 
         make_dir_path(os.path.dirname(new_filename))
 
-        # close and move the old file, then open a new one at the original location
+        # close and copy the old file, then truncate and reopen the old file
         self.__close_nolock()
-        # shutil.copy2(self.filename, new_filename)
-        # self.file.truncate(0)
-        shutil.move(self.filename, new_filename)
+        with open(self.filename, 'rb') as f_in, gzip.open(new_filename, 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+        with open(self.filename, 'a') as f_in:
+            f_in.truncate(0)
         self.__open_nolock()
 
         self.lock.release()
