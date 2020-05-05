@@ -4,10 +4,9 @@
   See LICENSE for licensing information
 '''
 
-import sys, os, socket, logging, random, re, shutil, datetime, urllib, gzip
-from subprocess import Popen, PIPE, STDOUT
+import sys, os, socket, logging, random, re, shutil, datetime, urllib.request, urllib.parse, urllib.error, gzip, lzma
 from threading import Lock
-from cStringIO import StringIO
+from io import StringIO
 from abc import ABCMeta, abstractmethod
 
 LINEFORMATS = "k-,r-,b-,g-,c-,m-,y-,k--,r--,b--,g--,c--,m--,y--,k:,r:,b:,g:,c:,m:,y:,k-.,r-.,b-.,g-.,c-.,m-.,y-."
@@ -156,7 +155,7 @@ def get_ip_address():
     """
     ip_address = None
     try:
-        data = urllib.urlopen('https://check.torproject.org/').read()
+        data = urllib.request.urlopen('https://check.torproject.org/').read().decode('utf-8')
         ip_address = find_ip_address_url(data)
         if not ip_address:
             logging.error(
@@ -195,18 +194,14 @@ class DataSource(object):
         self.filename = filename
         self.compress = compress
         self.source = None
-        self.xzproc = None
 
     def __iter__(self):
         if self.source is None:
             self.open()
         return self.source
 
-    def next(self):
-        return self.__next__()
-
-    def __next__(self):  # python 3
-        return self.source.next() if self.source is not None else None
+    def __next__(self):
+        return next(self.source) if self.source is not None else None
 
     def open(self):
         if self.source is None:
@@ -214,14 +209,12 @@ class DataSource(object):
                 self.source = sys.stdin
             elif self.compress or self.filename.endswith(".xz"):
                 self.compress = True
-                cmd = "xz --decompress --stdout {0}".format(self.filename)
-                xzproc = Popen(cmd.split(), stdout=PIPE)
-                self.source = xzproc.stdout
+                self.source = lzma.open(self.filename, mode='rt')
             elif self.filename.endswith(".gz"):
                 self.compress = True
-                self.source = gzip.open(self.filename, 'rb')
+                self.source = gzip.open(self.filename, 'rt')
             else:
-                self.source = open(self.filename, 'r')
+                self.source = open(self.filename, 'rt')
 
     def get_file_handle(self):
         if self.source is None:
@@ -230,12 +223,9 @@ class DataSource(object):
 
     def close(self):
         if self.source is not None: self.source.close()
-        if self.xzproc is not None: self.xzproc.wait()
 
 
-class Writable(object):
-    __metaclass__ = ABCMeta
-
+class Writable(object, metaclass=ABCMeta):
     @abstractmethod
     def write(self, msg):
         pass
@@ -251,8 +241,6 @@ class FileWritable(Writable):
         self.do_compress = do_compress
         self.do_truncate = do_truncate
         self.file = None
-        self.xzproc = None
-        self.ddproc = None
         self.lock = Lock()
 
         if self.filename == '-':
@@ -275,14 +263,9 @@ class FileWritable(Writable):
 
     def __open_nolock(self):
         if self.do_compress:
-            self.xzproc = Popen("xz --threads=3 -".split(), stdin=PIPE, stdout=PIPE)
-            dd_cmd = "dd of={0}".format(self.filename)
-            # # note: its probably not a good idea to append to finalized compressed files
-            # if not self.do_truncate: dd_cmd += " oflag=append conv=notrunc"
-            self.ddproc = Popen(dd_cmd.split(), stdin=self.xzproc.stdout, stdout=open(os.devnull, 'w'), stderr=STDOUT)
-            self.file = self.xzproc.stdin
+            self.file = lzma.open(self.filename, mode='wt')
         else:
-            self.file = open(self.filename, 'w' if self.do_truncate else 'a', 0)
+            self.file = open(self.filename, 'wt' if self.do_truncate else 'at', 1)
 
     def close(self):
         self.lock.acquire()
@@ -293,12 +276,6 @@ class FileWritable(Writable):
         if self.file is not None:
             self.file.close()
             self.file = None
-        if self.xzproc is not None:
-            self.xzproc.wait()
-            self.xzproc = None
-        if self.ddproc is not None:
-            self.ddproc.wait()
-            self.ddproc = None
 
     def rotate_file(self, filename_datetime=datetime.datetime.now()):
         self.lock.acquire()
@@ -316,7 +293,7 @@ class FileWritable(Writable):
         self.__close_nolock()
         with open(self.filename, 'rb') as f_in, gzip.open(new_filename, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
-        with open(self.filename, 'a') as f_in:
+        with open(self.filename, 'ab') as f_in:
             f_in.truncate(0)
         self.__open_nolock()
 

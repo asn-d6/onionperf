@@ -5,15 +5,13 @@
 '''
 
 from abc import ABCMeta, abstractmethod
-from cStringIO import StringIO
+from io import StringIO
 from networkx import read_graphml, write_graphml, DiGraph
 
-class TGenModel(object):
+class TGenModel(object, metaclass=ABCMeta):
     '''
     an action-dependency graph model for Shadow's traffic generator
     '''
-
-    __metaclass__ = ABCMeta
 
     def dump_to_string(self):
         s = StringIO()
@@ -42,9 +40,7 @@ class TGenLoadableModel(TGenModel):
         model_instance = cls(graph)
         return model_instance
 
-class GeneratableTGenModel(TGenModel):
-
-    __metaclass__ = ABCMeta
+class GeneratableTGenModel(TGenModel, metaclass=ABCMeta):
 
     @abstractmethod
     def generate(self):

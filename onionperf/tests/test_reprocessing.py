@@ -45,7 +45,7 @@ def test_log_match_no_log_date():
 def test_log_match_with_filter_date():
     tgen_logs = reprocessing.collect_logs(DATA_DIR, '*tgen.log')
     torctl_logs = reprocessing.collect_logs(DATA_DIR, '*torctl.log')
-    test_date = datetime.date(2019, 01, 10)
+    test_date = datetime.date(2019, 1, 10)
     log_pairs =  reprocessing.match(tgen_logs, torctl_logs, test_date)
     well_known_list = [(DATA_DIR + 'logs/onionperf_2019-01-10_23:59:59.tgen.log', DATA_DIR + 'logs/onionperf_2019-01-10_23:59:59.torctl.log', datetime.datetime(2019, 1, 10, 0, 0))]
     assert_equals(log_pairs, well_known_list)
@@ -53,7 +53,7 @@ def test_log_match_with_filter_date():
 def test_log_match_with_wrong_filter_date():
     tgen_logs = reprocessing.collect_logs(DATA_DIR, '*tgen.log')
     torctl_logs = reprocessing.collect_logs(DATA_DIR, '*torctl.log')
-    test_date = datetime.date(2017, 01, 01)
+    test_date = datetime.date(2017, 1, 1)
     log_pairs =  reprocessing.match(tgen_logs, torctl_logs, test_date)
     well_known_list = []
     assert_equals(log_pairs, well_known_list)

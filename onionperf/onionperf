@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
   OnionPerf
@@ -479,7 +479,7 @@ def visualize(args):
     tor_viz = TorVisualization()
 
     for (path, label) in args.datasets:
-        nextformat = lfcycle.next()
+        nextformat = next(lfcycle)
 
         anal = Analysis.load(filename=path)
         if anal is not None:

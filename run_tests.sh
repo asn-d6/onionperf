@@ -1,3 +1,3 @@
 #!/bin/sh
 
-PYTHONPATH=. python -m nose --with-coverage --cover-package=onionperf
+PYTHONPATH=. python3 -m nose --with-coverage --cover-package=onionperf

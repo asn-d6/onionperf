@@ -4,7 +4,7 @@
   See LICENSE for licensing information
 '''
 
-import os, traceback, subprocess, threading, Queue, logging, time, datetime, re, shlex
+import os, traceback, subprocess, threading, queue, logging, time, datetime, re, shlex
 from lxml import etree
 
 # stem imports
@@ -14,7 +14,7 @@ from stem.version import Version, Requirement, get_system_tor_version
 from stem import __version__ as stem_version
 
 # onionperf imports
-import analysis, monitor, model, util
+from . import analysis, monitor, model, util
 
 def generate_docroot_index(docroot_path):
     root = etree.Element("files")
@@ -22,7 +22,7 @@ def generate_docroot_index(docroot_path):
     for filename in filepaths:
         e = etree.SubElement(root, "file")
         e.set("name", filename)
-    with open("{0}/index.xml".format(docroot_path), 'wb') as f: print >> f, etree.tostring(root, pretty_print=True, xml_declaration=True)
+    with open("{0}/index.xml".format(docroot_path), 'wt') as f: print(etree.tostring(root, pretty_print=True, xml_declaration=True), file=f)
 
 def readline_thread_task(instream, q):
     # wait for lines from stdout until the EOF
@@ -49,7 +49,8 @@ def watchdog_thread_task(cmd, cwd, writable, done_ev, send_stdin, ready_search_s
         # wait for a string to appear in stdout if requested
         if ready_search_str is not None:
             boot_re = re.compile(ready_search_str)
-            for line in iter(subp.stdout.readline, b''):
+            for bytes in iter(subp.stdout.readline, b''):
+                line = bytes.decode('utf-8')
                 writable.write(line)
                 if boot_re.search(line):
                     break  # got it!
@@ -59,7 +60,7 @@ def watchdog_thread_task(cmd, cwd, writable, done_ev, send_stdin, ready_search_s
             ready_ev.set()
 
         # a helper will block on stdout and return lines back to us in a queue
-        stdout_q = Queue.Queue()
+        stdout_q = queue.Queue()
         t = threading.Thread(target=readline_thread_task, args=(subp.stdout, stdout_q))
         t.start()
 
@@ -67,9 +68,9 @@ def watchdog_thread_task(cmd, cwd, writable, done_ev, send_stdin, ready_search_s
         # sure that the subprocess is still alive and the master doesn't want us to quit
         while subp.poll() is None and done_ev.is_set() is False:
             try:
-                line = stdout_q.get(True, 1)
-                writable.write(line)
-            except Queue.Empty:
+                bytes = stdout_q.get(True, 1)
+                writable.write(bytes.decode('utf-8'))
+            except queue.Empty:
                 # the queue is empty and the get() timed out, recheck loop conditions
                 continue
 
@@ -100,7 +101,8 @@ def watchdog_thread_task(cmd, cwd, writable, done_ev, send_stdin, ready_search_s
 
         # helper thread is done, make sure we drain the remaining lines from the stdout queue
         while not stdout_q.empty():
-            writable.write(stdout_q.get_nowait())
+            bytes = stdout_q.get_nowait()
+            writable.write(bytes.decode('utf-8'))
         # if we have too many failures, exit the watchdog to propogate the error up
         if len(failure_times) > 10:
             break

@@ -17,7 +17,7 @@ from stem.response.events import CircuitEvent, CircMinorEvent, StreamEvent, Band
 from stem.response import ControlMessage, convert
 
 # onionperf imports
-import util
+from . import util
 
 ERRORS = {  'AUTH' : 'TGEN/AUTH',
             'READ' : 'TGEN/READ',
@@ -286,7 +286,7 @@ class Analysis(object):
                         output.write("@type torperf 1.1\r\n")
                         output_str = ' '.join("{0}={1}".format(k, d[k]) for k in sorted(d.keys()) if d[k] is not None).strip()
                         output.write("{0}\r\n".format(output_str))
-                    except KeyError, e:
+                    except KeyError as e:
                         logging.warning("KeyError while exporting torperf file, missing key '{0}', skipping transfer '{1}'".format(str(e), xfer_db['transfer_id']))
                         continue
 
@@ -431,8 +431,7 @@ class Transfer(object):
             d['elapsed_seconds']['payload_progress'] = {decile: self.payload_progress[decile] - e.unix_ts_start for decile in self.payload_progress if self.payload_progress[decile] is not None}
         return d
 
-class Parser(object):
-    __metaclass__ = ABCMeta
+class Parser(object, metaclass=ABCMeta):
     @abstractmethod
     def parse(self, source, do_simple):
         pass
@@ -837,7 +836,6 @@ class TorCtlParser(Parser):
             except:
                 continue
         source.close()
-        print len(self.streams), len(self.circuits)
 
     def get_data(self):
         return {'circuits': self.circuits, 'circuits_summary': self.circuits_summary,

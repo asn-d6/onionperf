@@ -46,9 +46,7 @@ pylab.rcParams.update({
 })
 '''
 
-class Visualization(object):
-
-    __metaclass__ = ABCMeta
+class Visualization(object, metaclass=ABCMeta):
 
     def __init__(self):
         self.datasets = []
@@ -349,7 +347,7 @@ class TGenVisualization(Visualization):
                         if client not in dls[bytes]: dls[bytes][client] = 0
                         for sec in d["time_to_last_byte"][b]: dls[bytes][client] += len(d["time_to_last_byte"][b][sec])
             for bytes in dls:
-                x, y = getcdf(dls[bytes].values(), shownpercentile=1.0)
+                x, y = getcdf(list(dls[bytes].values()), shownpercentile=1.0)
                 pylab.figure(figs[bytes].number)
                 pylab.plot(x, y, lineformat, label=label)
 
@@ -555,7 +553,7 @@ def getcdf(data, shownpercentile=0.99, maxpoints=10000.0):
     frac = cf(data)
     k = len(data) / maxpoints
     x, y, lasty = [], [], 0.0
-    for i in xrange(int(round(len(data) * shownpercentile))):
+    for i in range(int(round(len(data) * shownpercentile))):
         if i % k > 1.0: continue
         assert not numpy.isnan(data[i])
         x.append(data[i])

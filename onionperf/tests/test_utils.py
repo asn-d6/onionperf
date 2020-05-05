@@ -95,7 +95,7 @@ def test_find_path_with_which():
     """
 
     temp_file = tempfile.NamedTemporaryFile()
-    os.chmod(temp_file.name, 0775)
+    os.chmod(temp_file.name, 0o775)
     work_path = util.find_path(None, temp_file.name, tempfile.tempdir)
     assert_equals(work_path, temp_file.name)
     temp_file.close()
@@ -252,7 +252,7 @@ def test_file_writable():
     test_writable.write("onionperf")
     test_writable.close()
     expected_checksum = "5001ed4ab25b52543946fa63da829d4eeab1bd254c89ffdad0877186e074b385"
-    with open(temp_file.name) as f:
+    with open(temp_file.name, 'rb') as f:
         file_bytes = f.read()
         file_checksum = hashlib.sha256(file_bytes).hexdigest()
     assert_equals(file_checksum, expected_checksum)
@@ -270,8 +270,8 @@ def test_file_writable_compressed():
     test_writable = util.FileWritable(temp_file.name, True)
     test_writable.write("onionperf")
     test_writable.close()
-    expected_checksum = "66a6256bc4b04529c7123fa9573d30de659ffaa0cce1cc9b189817c8bf30e813"
-    with open(temp_file.name) as f:
+    expected_checksum = "3556b3bee6bb56d0a42676cbbf5784ebe4151fe65b0797f42260f93212e2df11"
+    with open(temp_file.name, 'rb') as f:
         file_bytes = f.read()
         file_checksum = hashlib.sha256(file_bytes).hexdigest()
     assert_equals(file_checksum, expected_checksum)
