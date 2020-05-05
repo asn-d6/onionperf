@@ -300,7 +300,7 @@ def test_file_writable_rotate_file():
     test_writable.write("onionperf")
     test_writable.rotate_file(datetime.datetime(2018, 11, 27, 0, 0, 0))
     created_dir = os.path.join(work_dir, "log_archive")
-    rotated_file = os.path.join(created_dir, "logfile_2018-11-27_00:00:00")
+    rotated_file = os.path.join(created_dir, "logfile_2018-11-27_00:00:00.gz")
     assert(os.path.exists(created_dir))
     assert(os.path.isdir(created_dir))
     assert(os.path.exists(rotated_file))
