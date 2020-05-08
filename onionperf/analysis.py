@@ -50,7 +50,7 @@ class Analysis(object):
         self.torctl_filepaths.append(filepath)
 
     def get_nodes(self):
-        return self.json_db['data'].keys()
+        return list(self.json_db['data'].keys())
 
     def get_tor_bandwidth_summary(self, node, direction):
         try:
@@ -160,13 +160,13 @@ class Analysis(object):
                 continue
 
             xfers_by_filesize = {}
-            for xfer_db in self.json_db['data'][nickname]['tgen']['transfers'].values():
+            for xfer_db in list(self.json_db['data'][nickname]['tgen']['transfers'].values()):
                 xfers_by_filesize.setdefault(xfer_db['filesize_bytes'], []).append(xfer_db)
 
             streams_by_srcport, circuits = {}, []
             if 'tor' in self.json_db['data'][nickname]:
                 if 'streams' in self.json_db['data'][nickname]['tor']:
-                    for streams_db in self.json_db['data'][nickname]['tor']['streams'].values():
+                    for streams_db in list(self.json_db['data'][nickname]['tor']['streams'].values()):
                         if 'source' in streams_db:
                             srcport = int(streams_db['source'].split(':')[1])
                             streams_by_srcport[srcport] = streams_db
@@ -264,9 +264,9 @@ class Analysis(object):
                         srcport = int(xfer_db['endpoint_local'].split(':')[2])
                         if srcport in streams_by_srcport:
                             stream_db = streams_by_srcport[srcport]
-                            if 'failure_reason_local' in stream_db.keys():
+                            if 'failure_reason_local' in list(stream_db.keys()):
                                 d['ERRORCODE'] += '_' +  stream_db['failure_reason_local']
-                                if 'failure_reason_remote' in stream_db.keys():
+                                if 'failure_reason_remote' in list(stream_db.keys()):
                                     d['ERRORCODE'] += '_' +  stream_db['failure_reason_remote']
                             circid = int(stream_db['circuit_id'] or 0)
                             if circid in circuits:
@@ -280,7 +280,7 @@ class Analysis(object):
                                 d['CIRC_ID'] = circid
                                 d['USED_AT'] = stream_db['unix_ts_end']
                                 d['USED_BY'] = int(stream_db['stream_id'])
-                        if 'ERRORCODE' in d.keys():
+                        if 'ERRORCODE' in list(d.keys()):
                             d['ERRORCODE'] = ERRORS[d['ERRORCODE']]
 
                         output.write("@type torperf 1.1\r\n")
