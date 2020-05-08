@@ -13,7 +13,7 @@ import sys
 def collect_logs(dirpath, pattern):
     logs = []
     for root, dirnames, filenames in os.walk(dirpath):
-        for filename in fnmatch.filter(filenames, pattern):
+        for filename in fnmatch.filter(sorted(filenames), pattern):
             logs.append(os.path.join(root, filename))
     return logs
 
