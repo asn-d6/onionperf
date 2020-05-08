@@ -12,6 +12,7 @@ produce a json stats database and files that can feed into Torperf, and
 can later be used to visualize changes in Tor client performance over time.
 
 For more information, see https://git.torproject.org/onionperf
+
 For a dockerized setup, see https://github.com/hiromipaw/onionperf-docker
 
 ## Quick deployment instructions
@@ -19,7 +20,7 @@ For a dockerized setup, see https://github.com/hiromipaw/onionperf-docker
 These are the quick deployment instructions for the current Debian stable distribution.
 
 ```
-sudo apt install git cmake make build-essential gcc libigraph0-dev libglib2.0-dev python-dev libxml2-dev python-lxml python-networkx python-scipy python-matplotlib python-numpy libevent-dev libssl-dev python-stem tor
+sudo apt install git cmake make build-essential gcc libigraph0-dev libglib2.0-dev python3-dev libxml2-dev python3-lxml python3-networkx python3-scipy python3-matplotlib python3-numpy libevent-dev libssl-dev python3-stem tor
 
 git clone https://github.com/shadow/tgen.git
 cd tgen
@@ -31,8 +32,8 @@ sudo ln -s ~/tgen/build/tgen /usr/bin/tgen
 
 git clone https://github.com/torproject/onionperf
 cd onionperf
-sudo python setup.py build
-sudo python setup.py install
+sudo python3 setup.py build
+sudo python3 setup.py install
 ```
 
 ## Step-by-step installation instructions
@@ -50,13 +51,13 @@ cd onionperf
 
   + **Tor** (>= v0.2.7.3-rc): libevent, openssl
   + **TGen** (Shadow >= v1.11.1): cmake, glib2, igraph
-  + **OnionPerf**: python
+  + **OnionPerf**: python3
 
 The easiest way to satisfy all system dependencies is to use a package manager. TGen is not currently packaged and needs to be built from source.
 Note we only provide support for the current Debian Stable distribution.
 
 ```
-sudo apt install cmake make build-essential gcc libigraph0-dev libglib2.0-dev python-dev
+sudo apt install cmake make build-essential gcc libigraph0-dev libglib2.0-dev python3-dev
 ```
 
 ### Install Python modules
@@ -68,7 +69,7 @@ sudo apt install cmake make build-essential gcc libigraph0-dev libglib2.0-dev py
 The easiest way to satisfy all system dependencies is to use a package manager.
 
 ```
-apt install tor libxml2-dev python-lxml python-networkx python-scipy python-matplotlib python-numpy python-stem
+apt install tor libxml2-dev python3-lxml python3-networkx python3-scipy python3-matplotlib python3-numpy python3-stem
 
 ```
 
@@ -86,15 +87,14 @@ You must first satisfy the system/library requirements of each of the python mod
 Note: pip installation is not recommended as software installed by pip is not verified.
 
 ```
-sudo apt-get install python-dev libxml2 libxml2-dev libxslt1.1 libxslt1-dev libpng12-0 libpng12-dev libfreetype6 libfreetype6-dev
+sudo apt-get install python3-dev libxml2 libxml2-dev libxslt1.1 libxslt1-dev libpng12-0 libpng12-dev libfreetype6 libfreetype6-dev
 ```
 
 It is recommended to use virtual environments to keep all of the dependencies self-contained and
 to avoid conflicts with your other python projects.
 
 ```
-pip install virtualenv
-virtualenv --no-site-packages venv
+python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt # installs all required python modules for all OnionPerf subcommands
 deactivate
@@ -169,8 +169,8 @@ pip install -I .
 Otherwise:
 
 ```
-python setup.py build
-python setup.py install
+python3 setup.py build
+python3 setup.py install
 ```
 
 ### Run OnionPerf
