@@ -203,18 +203,18 @@ class DataSource(object):
     def __next__(self):
         return next(self.source) if self.source is not None else None
 
-    def open(self):
+    def open(self, newline=None):
         if self.source is None:
             if self.filename == '-':
                 self.source = sys.stdin
             elif self.compress or self.filename.endswith(".xz"):
                 self.compress = True
-                self.source = lzma.open(self.filename, mode='rt')
+                self.source = lzma.open(self.filename, mode='rt', newline=newline)
             elif self.filename.endswith(".gz"):
                 self.compress = True
-                self.source = gzip.open(self.filename, 'rt')
+                self.source = gzip.open(self.filename, 'rt', newline=newline)
             else:
-                self.source = open(self.filename, 'rt')
+                self.source = open(self.filename, 'rt', newline=newline)
 
     def get_file_handle(self):
         if self.source is None:

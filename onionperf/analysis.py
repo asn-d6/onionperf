@@ -825,7 +825,7 @@ class TorCtlParser(Parser):
 
     def parse(self, source, do_simple=True):
         self.do_simple = do_simple
-        source.open()
+        source.open(newline='\r\n')
         for line in source:
             # ignore line parsing errors
             try:
