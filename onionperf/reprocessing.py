@@ -46,23 +46,24 @@ def match(tgen_logs, tor_logs, date_filter):
     return log_pairs
 
 
-def analyze_func(prefix, nick, pair):
+def analyze_func(prefix, nick, save_torperf, do_simple, pair):
     analysis = Analysis(nickname=nick)
     logging.info('Analysing pair for date {0}'.format(pair[2]))
     analysis.add_tgen_file(pair[0])
     analysis.add_torctl_file(pair[1])
-    analysis.analyze(do_simple=False, date_filter=pair[2])
+    analysis.analyze(do_simple=do_simple, date_filter=pair[2])
     analysis.save(output_prefix=prefix)
-    analysis.export_torperf_version_1_1(
-        output_prefix=prefix, do_compress=False)
+    if save_torperf:
+        analysis.export_torperf_version_1_1(
+            output_prefix=prefix, do_compress=False)
     return 1
 
 
-def multiprocess_logs(log_pairs, prefix, nick=None):
+def multiprocess_logs(log_pairs, prefix, nick=None, save_torperf=False, do_simple=False):
     pool = Pool(cpu_count())
     analyses = None
     try:
-        func = partial(analyze_func, prefix, nick)
+        func = partial(analyze_func, prefix, nick, save_torperf, do_simple)
         mr = pool.map_async(func, log_pairs)
         pool.close()
         while not mr.ready():
