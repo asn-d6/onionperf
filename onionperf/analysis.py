@@ -433,8 +433,8 @@ class Transfer(object):
             return None
         d = e.__dict__
         if not e.is_error:
-            d['elapsed_seconds']['payload_progress'] = {decile: self.payload_progress[decile] - e.unix_ts_start for decile in self.payload_progress if self.payload_progress[decile] is not None}
-            d['elapsed_seconds']['payload_bytes'] = {partial: self.payload_bytes[partial] - e.unix_ts_start for partial in self.payload_bytes if self.payload_bytes[partial] is not None}
+            d['elapsed_seconds']['payload_progress'] = {decile: round(self.payload_progress[decile] - e.unix_ts_start, 6) for decile in self.payload_progress if self.payload_progress[decile] is not None}
+            d['elapsed_seconds']['payload_bytes'] = {partial: round(self.payload_bytes[partial] - e.unix_ts_start, 6) for partial in self.payload_bytes if self.payload_bytes[partial] is not None}
         return d
 
 class Parser(object, metaclass=ABCMeta):
