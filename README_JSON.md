@@ -16,6 +16,17 @@ The structure is given here with variable keys marked as such.
                   "command": 0.319006, # step 7 if using a proxy, else step 3 (initial GET/PUT)
                   "first_byte": 0.0, # step 9 if using a proxy, else step 5 (initial GET/PUT)
                   "last_byte": 0.0, # step 11 if using a proxy, else step 7 (initial GET/PUT)
+                  "payload_bytes": { # similar to payload_progress below
+                    "10240": 0.0, # number of payload bytes completed : seconds to complete it
+                    "20480": 0.0,
+                    "51200": 0.0,
+                    "102400": 0.0,
+                    "204800": 0.0,
+                    "512000": 0.0,
+                    "1048576": 0.0,
+                    "2097152": 0.0,
+                    "5242880": 0.0
+                  },
                   "payload_progress": { # step 10 if using a proxy, else step 6 (initial GET/PUT)
                     "0.0": 0.0, # percent of payload completed : seconds to complete it
                     "0.1": 0.0,

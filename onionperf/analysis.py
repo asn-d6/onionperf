@@ -414,9 +414,14 @@ class Transfer(object):
         self.id = tid
         self.last_event = None
         self.payload_progress = {decile:None for decile in [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]}
+        self.payload_bytes = {partial:None for partial in [10240, 20480, 51200, 102400, 204800, 512000, 1048576, 2097152, 5242880]}
 
     def add_event(self, status_event):
         progress_frac = float(status_event.payload_bytes_status) / float(status_event.filesize_bytes)
+        progress = float(status_event.payload_bytes_status)
+        for partial in sorted(self.payload_bytes.keys()):
+            if progress >= partial and self.payload_bytes[partial] is None:
+                self.payload_bytes[partial] = status_event.unix_ts_end
         for decile in sorted(self.payload_progress.keys()):
             if progress_frac >= decile and self.payload_progress[decile] is None:
                 self.payload_progress[decile] = status_event.unix_ts_end
@@ -429,6 +434,7 @@ class Transfer(object):
         d = e.__dict__
         if not e.is_error:
             d['elapsed_seconds']['payload_progress'] = {decile: self.payload_progress[decile] - e.unix_ts_start for decile in self.payload_progress if self.payload_progress[decile] is not None}
+            d['elapsed_seconds']['payload_bytes'] = {partial: self.payload_bytes[partial] - e.unix_ts_start for partial in self.payload_bytes if self.payload_bytes[partial] is not None}
         return d
 
 class Parser(object, metaclass=ABCMeta):
