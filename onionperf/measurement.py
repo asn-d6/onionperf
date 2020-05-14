@@ -148,9 +148,8 @@ def logrotate_thread_task(writables, tgen_writable, torctl_writable, docroot, ni
                     # run the analysis, i.e. parse the files
                     anal.analyze(do_simple=False, date_filter=next_midnight.date())
 
-                    # save the results in onionperf and torperf format in the www docroot
+                    # save the results in onionperf json format in the www docroot
                     anal.save(output_prefix=docroot, do_compress=True)
-                    anal.export_torperf_version_1_1(output_prefix=docroot, do_compress=False)
 
                     # update the xml index in docroot
                     generate_docroot_index(docroot)
@@ -306,7 +305,7 @@ class Measurement(object):
             logging.info("Exiting")
 
     def __start_log_processors(self, general_writables, tgen_writable, torctl_writable):
-        # rotate the log files, and then parse out the torperf measurement data
+        # rotate the log files, and then parse out the measurement data
         logrotate_args = (general_writables, tgen_writable, torctl_writable, self.www_docroot, self.nickname, self.done_event)
         logrotate = threading.Thread(target=logrotate_thread_task, name="logrotate", args=logrotate_args)
         logrotate.start()
