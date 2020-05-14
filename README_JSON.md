@@ -207,5 +207,7 @@ The structure is given here with variable keys marked as such.
             }
           }
         }
-      }
+      },
+      "type": "onionperf", # document type
+      "version": "2.0" # document version
     }

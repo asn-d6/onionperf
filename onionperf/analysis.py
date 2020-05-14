@@ -37,7 +37,7 @@ class Analysis(object):
         self.nickname = nickname
         self.measurement_ip = ip_address
         self.hostname = gethostname().split('.')[0]
-        self.json_db = {'type':'onionperf', 'version':1.0, 'data':{}}
+        self.json_db = {'type':'onionperf', 'version':'2.0', 'data':{}}
         self.tgen_filepaths = []
         self.torctl_filepaths = []
         self.date_filter = None
@@ -102,7 +102,7 @@ class Analysis(object):
             else:
                 self.json_db['data'][nickname] = analysis.json_db['data'][nickname]
 
-    def save(self, filename=None, output_prefix=os.getcwd(), do_compress=True, version=1.0):
+    def save(self, filename=None, output_prefix=os.getcwd(), do_compress=True):
         if filename is None:
             if self.date_filter is None:
                 filename = "onionperf.analysis.json.xz"
@@ -122,7 +122,7 @@ class Analysis(object):
         logging.info("done!")
 
     @classmethod
-    def load(cls, filename="onionperf.analysis.json.xz", input_prefix=os.getcwd(), version=1.0):
+    def load(cls, filename="onionperf.analysis.json.xz", input_prefix=os.getcwd()):
         filepath = os.path.abspath(os.path.expanduser("{0}".format(filename)))
         if not os.path.exists(filepath):
             filepath = os.path.abspath(os.path.expanduser("{0}/{1}".format(input_prefix, filename)))
@@ -142,7 +142,7 @@ class Analysis(object):
         if 'type' not in db or 'version' not in db:
             logging.warning("'type' or 'version' not present in database")
             return None
-        elif db['type'] != 'onionperf' or db['version'] != 1.0:
+        elif db['type'] != 'onionperf' or str(db['version']) >= '3.':
             logging.warning("type or version not supported (type={0}, version={1})".format(db['type'], db['version']))
             return None
         else:
