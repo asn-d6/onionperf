@@ -421,8 +421,6 @@ def analyze(args):
             analysis.add_torctl_file(args.torctl_logpath)
         analysis.analyze(args.do_simple, date_filter=args.date_filter)
         analysis.save(output_prefix=args.prefix)
-        if args.save_torperf:
-            analysis.export_torperf_version_1_1(output_prefix=args.prefix, do_compress=False)
 
     elif args.tgen_logpath is not None and os.path.isdir(args.tgen_logpath) and args.torctl_logpath is not None and os.path.isdir(args.torctl_logpath):
         from onionperf import reprocessing
@@ -430,7 +428,7 @@ def analyze(args):
         torctl_logs = reprocessing.collect_logs(args.torctl_logpath, '*torctl.log*')
         log_pairs = reprocessing.match(tgen_logs, torctl_logs, args.date_filter)
         logging.info("Found {0} matching log pairs to be reprocessed".format(len(log_pairs)))
-        reprocessing.multiprocess_logs(log_pairs, args.prefix, args.nickname, args.save_torperf, args.do_simple)
+        reprocessing.multiprocess_logs(log_pairs, args.prefix, args.nickname, args.do_simple)
 
     else:
         logging.error("Given paths were an unrecognized mix of file and directory paths, nothing will be analyzed")
