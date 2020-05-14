@@ -226,14 +226,7 @@ subcommand (which is described in more detail below). The analysis produces a
 contextual information collected during the measurement process. The `README_JSON.md`
 file in this repo describes the format and elements contained in the `json` file.
 
-The analysis also produces a `.tpf` file in the standard Torperf format
-(`type torperf 1.0`) which contains a subset of the measurement data available in
-the `json` file. This file is produced to increase interoperability with existing
-tools written to process Torperf measurement results. More information regarding
-how to read Torperf's measurements results can be found at:
-https://metrics.torproject.org/collector.html#torperf.
-
-The daily generated `json` and `tpf` files are placed in the web docroot and are
+The daily generated `json` files are placed in the web docroot and are
 available through the local filesystem in the `onionperf-data/htdocs` directory.
 These files can be shared via a web server such as Apache or nginx.
 

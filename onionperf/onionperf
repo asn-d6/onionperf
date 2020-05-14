@@ -200,7 +200,7 @@ def main():
         default=True)
 
     measure_parser.add_argument('-n', '--nickname',
-        help="""the 'SOURCE' STRING to use in .tpf torperf stats files produced by OnionPerf""",
+        help="""the 'SOURCE' STRING to use in measurement result files produced by OnionPerf""",
         metavar="STRING", type=str,
         action="store", dest="nickname",
         default=hostname)
