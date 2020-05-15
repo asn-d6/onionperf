@@ -1,14 +1,8 @@
-Twisted
-cycler
-decorator
 lxml
 matplotlib
 networkx
+nose-cov
+nose
 numpy
-pyparsing
-python-dateutil
-pytz
 scipy
-six
 stem
-zope.interface
