@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
-from distutils.core import setup
+from setuptools import setup
+
+with open('requirements.txt') as f:
+    install_requires = f.readlines()
 
 setup(name='OnionPerf',
       version='0.2.pre',
@@ -9,4 +12,5 @@ setup(name='OnionPerf',
       url='https://github.com/robgjansen/onionperf/',
       packages=['onionperf'],
       scripts=['onionperf/onionperf'],
+      install_requires=install_requires
      )
