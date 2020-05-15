@@ -136,6 +136,14 @@ Download files using specified configuration file for the Tor client (default: d
 
  --torserver-conf-file FILE
 
+In addition to specifying configuration files, you can pass newline-separated
+Tor configuration options to the Tor process by adding them to the
+:code:`BASETORRC` environment variable. These options are prepended to all other
+configuration options.  Here is an example which prepends the options
+:code:`Option1 Foo` and :code:`Option2 Bar` to Tor's configuration file: ::
+
+ BASETORRC=$'Option1 Foo\nOption2 Bar' onionperf ...
+
 Download files using specified configuration file for the Tor server  (default: disabled) ::
 
  --additional-client-conf STRING
