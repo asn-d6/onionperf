@@ -112,6 +112,7 @@ to avoid conflicts with your other python projects.
 ```
 python3 -m venv venv
 source venv/bin/activate
+pip install --upgrade pip # make sure that you have a recent version of pip
 pip install -r requirements.txt # installs all required python modules for all OnionPerf subcommands
 deactivate
 ```
