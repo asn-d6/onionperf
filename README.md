@@ -15,6 +15,22 @@ For more information, see https://git.torproject.org/onionperf
 
 For a dockerized setup, see https://github.com/hiromipaw/onionperf-docker
 
+## Table of contents
+
+* [Quick deployment instructions](#quick-deployment-instructions)
+* [Step-by-step installation instructions](#step-by-step-installation-instructions)
+  - [Get OnionPerf](#get-onionperf)
+  - [Install System Dependencies](#install-system-dependencies)
+  - [Install Python modules](#install-python-modules)
+  - [Build Tor](#build-tor)
+  - [Build TGen Traffic Generator](#build-tgen-traffic-generator)
+  - [Build and Install OnionPerf](#build-and-install-onionperf)
+* [Run OnionPerf](#run-onionperf)
+  - [Measure Tor](#measure-tor)
+  - [Analyze and Visualize Results](#analyze-and-visualize-results)
+  - [Troubleshooting](#troubleshooting)
+* [Contribute](#contribute)
+
 ## Quick deployment instructions
 
 These are the quick deployment instructions for the current Debian stable distribution.
@@ -173,7 +189,7 @@ python3 setup.py build
 python3 setup.py install
 ```
 
-### Run OnionPerf
+## Run OnionPerf
 
 OnionPerf has several modes of operation and a help menu for each. For a
 description of each mode, use:
@@ -241,7 +257,7 @@ specific log files from the `log_rotate` directories. You can also plot the meas
 results from the `json` files by running in `onionperf visualize` mode. See below for
 more details.
 
-### Analyze/Visualize Results
+### Analyze and Visualize Results
 
 OnionPerf runs the data it collects through `analyze` mode every night at midnight to
 produce the `onionperf.analysis.json` stats file. This file can be reproduced by using
@@ -318,6 +334,6 @@ In this particular case tgen-server log file revealed the problem:
 
 The log indicated that port 8080 was already in use by another process.
 
-### Contribute
+## Contribute
 
 GitHub pull requests are welcome and encouraged!
