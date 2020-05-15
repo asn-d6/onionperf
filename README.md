@@ -48,9 +48,12 @@ sudo ln -s ~/tgen/build/tgen /usr/bin/tgen
 
 git clone https://github.com/torproject/onionperf
 cd onionperf
-sudo python3 setup.py build
-sudo python3 setup.py install
+python3 setup.py build
+python3 setup.py install --user
 ```
+
+Once the installation finished, you can find the onionperf script in
+`~/.local/bin/`.
 
 ## Step-by-step installation instructions
 
