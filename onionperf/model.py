@@ -73,8 +73,6 @@ class TorperfModel(GeneratableTGenModel):
         if self.socksproxy is not None:
             g.node["start"]["socksproxy"] = self.socksproxy
         g.add_node("pause", time="5 minutes")
-        g.add_node("transfer50k", type="get", protocol="tcp", size="50 KiB", timeout="270 seconds", stallout="0 seconds")
-        g.add_node("transfer1m", type="get", protocol="tcp", size="1 MiB", timeout="270 seconds", stallout="0 seconds")
         g.add_node("transfer5m", type="get", protocol="tcp", size="5 MiB", timeout="270 seconds", stallout="0 seconds")
 
         g.add_edge("start", "pause")
@@ -84,9 +82,7 @@ class TorperfModel(GeneratableTGenModel):
         g.add_edge("pause", "pause")
 
         # these are chosen with weighted probability, change edge 'weight' attributes to adjust probability
-        g.add_edge("pause", "transfer50k", weight="12.0")
-        g.add_edge("pause", "transfer1m", weight="2.0")
-        g.add_edge("pause", "transfer5m", weight="1.0")
+        g.add_edge("pause", "transfer5m")
 
         return g
 
