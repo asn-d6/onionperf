@@ -170,7 +170,6 @@ class Measurement(object):
         self.nickname = nickname
         self.threads = None
         self.done_event = None
-        self.hs_service_id = None
         self.hs_v3_service_id = None
         self.www_docroot = "{0}/htdocs".format(self.datadir_path)
         self.base_config = os.environ['BASETORRC'] if "BASETORRC" in os.environ else ""
@@ -226,8 +225,7 @@ class Measurement(object):
                 general_writables.append(tor_writable)
 
             server_urls = []
-            if do_onion and self.hs_service_id is not None and self.hs_v3_service_id is not None:
-                server_urls.append("{0}.onion:{1}".format(self.hs_service_id, client_tgen_connect_port))
+            if do_onion and self.hs_v3_service_id is not None:
                 server_urls.append("{0}.onion:{1}".format(self.hs_v3_service_id, client_tgen_connect_port))
             if do_inet:
                 connect_ip = client_tgen_connect_ip if client_tgen_connect_ip != '0.0.0.0' else util.get_ip_address()
@@ -277,20 +275,12 @@ class Measurement(object):
         finally:
             logging.info("Cleaning up child processes now...")
 
-            if self.hs_service_id is not None:
-                try:
-                    with Controller.from_port(port=self.hs_control_port) as torctl:
-                        torctl.authenticate()
-                        torctl.remove_ephemeral_hidden_service(self.hs_service_id)
-                except: pass  # this fails to authenticate if tor proc is dead
-
             if self.hs_v3_service_id is not None:
                 try:
                     with Controller.from_port(port=self.hs_v3_control_port) as torctl:
                         torctl.authenticate()
                         torctl.remove_ephemeral_hidden_service(self.hs_v3_service_id)
                 except: pass  # this fails to authenticate if tor proc is dead
-
 
 #            logging.disable(logging.INFO)
             self.done_event.set()
@@ -387,21 +377,13 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory 
     def start_onion_service(self,
                             control_port,
                             hs_port_mapping,
-                            key_path,
-                            v3=False):
-        if v3:
-            logging.info("Creating ephemeral hidden service with v3 onions...")
-        else:
-            logging.info("Creating ephemeral hidden service with v2 onions...")
+                            key_path):
+        logging.info("Creating ephemeral hidden service...")
     
         with Controller.from_port(port=control_port) as torctl:
             torctl.authenticate()
             if not os.path.exists(key_path):
                 response = torctl.create_ephemeral_hidden_service(
-                    hs_port_mapping, 
-                    detached=True,
-                    await_publication=True
-                ) if not v3 else torctl.create_ephemeral_hidden_service(
                     hs_port_mapping,
                     detached=True,
                     await_publication=True,
@@ -418,12 +400,8 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory 
                     await_publication=True,
                     key_content=key_content,
                     key_type=key_type)
-            if v3:
-                self.hs_v3_service_id = response.service_id
-                self.hs_v3_control_port = control_port
-            else:
-                self.hs_service_id = response.service_id
-                self.hs_control_port = control_port
+            self.hs_v3_service_id = response.service_id
+            self.hs_v3_control_port = control_port
     
             logging.info("Ephemeral hidden service is available at {0}.onion".format(response.service_id))
         return response.service_id
@@ -437,7 +415,6 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory 
     def __start_tor(self, name, control_port, socks_port, hs_port_mapping=None):
         logging.info("Starting Tor {0} process with ControlPort={1}, SocksPort={2}...".format(name, control_port, socks_port))
         tor_datadir = "{0}/tor-{1}".format(self.datadir_path, name)
-        key_path_v2 = "{0}/os_key_v2".format(self.privatedir_path)
         key_path_v3 = "{0}/os_key_v3".format(self.privatedir_path)
 
         if not os.path.exists(tor_datadir): os.makedirs(tor_datadir)
@@ -476,8 +453,7 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory 
         self.threads.append(torctl_helper)
 
         if hs_port_mapping is not None:
-            self.start_onion_service(control_port, hs_port_mapping, key_path_v2)
-            self.start_onion_service(control_port, hs_port_mapping, key_path_v3, v3=True)
+            self.start_onion_service(control_port, hs_port_mapping, key_path_v3)
 
         return tor_writable, torctl_writable
 
