@@ -4,5 +4,7 @@ networkx
 nose-cov
 nose
 numpy
+pandas
 scipy
+seaborn
 stem
