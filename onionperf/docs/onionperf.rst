@@ -86,9 +86,7 @@ Watch out for any projects in the log. The output of the measurement should look
  2019-03-05 17:57:03 1551805023.013463 [onionperf] [INFO] Starting Tor server process with ControlPort=26984, SocksPort=17674...
  2019-03-05 17:57:03 1551805023.016020 [onionperf] [INFO] Logging Tor server process output to /home/ana/onionperf-data/tor-server/onionperf.tor.log
  2019-03-05 17:57:18 1551805038.183236 [onionperf] [INFO] Logging Tor server control port monitor output to /home/ana/onionperf-data/tor-server/onionperf.torctl.log
- 2019-03-05 17:57:21 1551805041.193610 [onionperf] [INFO] Creating ephemeral hidden service with v2 onions...
- 2019-03-05 17:57:53 1551805073.332177 [onionperf] [INFO] Ephemeral hidden service is available at t7ki27c6eratpxa2.onion
- 2019-03-05 17:57:53 1551805073.334130 [onionperf] [INFO] Creating ephemeral hidden service with v3 onions...
+ 2019-03-05 17:57:53 1551805073.334130 [onionperf] [INFO] Creating ephemeral hidden service...
  2019-03-05 17:57:55 1551805075.847095 [onionperf] [INFO] Ephemeral hidden service is available at p3d2xcwjevqkiwtyejjbjxwadp5ces7v4k4hhrsheqwbbokuismkiyad.onion
  2019-03-05 17:57:55 1551805075.851187 [onionperf] [INFO] Starting Tor client process with ControlPort=18843, SocksPort=18397...
  2019-03-05 17:57:55 1551805075.851770 [onionperf] [INFO] Logging Tor client process output to /home/ana/onionperf-data/tor-client/onionperf.tor.log
@@ -150,7 +148,7 @@ Download files using specified configuration file for the Tor server  (default: 
 
 Download files using specified configuration lines (default: disabled)
 
-By default, OnionPerf downloads files using both the Internet and Onion services, using both v2 and v3 Onion addresses.
+By default, OnionPerf downloads files using both the Internet and Onion services, using a v3 Onion address.
 It uses publicly available relays, but by specifying additional configuration files it can be configured to run
 on test Tor networks, or using bridges with or without pluggable transports.
 ::
@@ -192,7 +190,7 @@ A file PATH to a TGen binary (default: looks in $PATH)
 Example vanilla Tor deployment
 ------------------------------
 
-The following command will download files continuously using a Tor client through both Onion service versions (v2 + v3) and via the Internet until it is stopped: 
+The following command will download files continuously using a Tor client through Onion service version 3 and via the Internet until it is stopped:
 ::
 
  onionperf --measure 
@@ -200,7 +198,7 @@ The following command will download files continuously using a Tor client throug
 
 Example vanilla bridge deployment
 ---------------------------------
-The following command will download files continuously using a Tor client through both Onion service versions (v2 + v3) and via the Internet until it is stopped. 
+The following command will download files continuously using a Tor client through Onion service version 3 and via the Internet until it is stopped.
 The Tor client will always pick one of the bridges provided in this configuration to be the first hop in the circuits it builds:
 
 ::
