@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import datetime
+import numpy as np
 
 class Visualization(object, metaclass=ABCMeta):
 
@@ -54,6 +55,7 @@ class TGenVisualization(Visualization):
                 for transfer_id, transfer_data in tgen_transfers.items():
                     transfer = {"transfer_id": transfer_id, "label": label,
                                 "filesize_bytes": transfer_data["filesize_bytes"]}
+                    transfer["server"] = "onion" if ".onion:" in transfer_data["endpoint_remote"] else "public"
                     if "elapsed_seconds" in transfer_data:
                         s = transfer_data["elapsed_seconds"]
                         if "first_byte" in s:
@@ -68,64 +70,75 @@ class TGenVisualization(Visualization):
         self.data = pd.DataFrame.from_records(transfers, index="transfer_id")
 
     def __plot_firstbyte_ecdf(self):
-        self.__draw_ecdf(x="time_to_first_byte", hue="label", hue_name="Data set",
-                         data=self.data, title="Time to download first byte",
-                         xlabel="Download time (s)", ylabel="Cumulative Fraction")
-
-    def __plot_firstbyte_time(self):
-        for bytes in self.data["filesize_bytes"].unique():
-            self.__draw_timeplot(x="start", y="time_to_first_byte", hue="label", hue_name="Data set",
-                                 data=self.data[self.data["filesize_bytes"]==bytes],
-                                 title="Time to download first of {0} bytes over time".format(bytes),
-                                 xlabel="Download start time", ylabel="Download time (s)")
-
-    def __plot_lastbyte_ecdf(self):
-        for bytes in self.data["filesize_bytes"].unique():
-            self.__draw_ecdf(x="time_to_last_byte", hue="label", hue_name="Data set",
-                             data=self.data[self.data["filesize_bytes"]==bytes],
-                             title="Time to download last of {0} bytes".format(bytes),
+        for server in self.data["server"].unique():
+            self.__draw_ecdf(x="time_to_first_byte", hue="label", hue_name="Data set",
+                             data=self.data[self.data["server"] == server],
+                             title="Time to download first byte from {0} service".format(server),
                              xlabel="Download time (s)", ylabel="Cumulative Fraction")
 
+    def __plot_firstbyte_time(self):
+        for bytes in np.sort(self.data["filesize_bytes"].unique()):
+            for server in self.data["server"].unique():
+                self.__draw_timeplot(x="start", y="time_to_first_byte", hue="label", hue_name="Data set",
+                                     data=self.data[(self.data["server"] == server) & (self.data["filesize_bytes"] == bytes)],
+                                     title="Time to download first of {0} bytes from {1} service over time".format(bytes, server),
+                                     xlabel="Download start time", ylabel="Download time (s)")
+
+    def __plot_lastbyte_ecdf(self):
+        for bytes in np.sort(self.data["filesize_bytes"].unique()):
+            for server in self.data["server"].unique():
+                self.__draw_ecdf(x="time_to_last_byte", hue="label", hue_name="Data set",
+                                 data=self.data[(self.data["server"] == server) & (self.data["filesize_bytes"] == bytes)],
+                                 title="Time to download last of {0} bytes from {1} service".format(bytes, server),
+                                 xlabel="Download time (s)", ylabel="Cumulative Fraction")
+
     def __plot_lastbyte_box(self):
-        for bytes in self.data["filesize_bytes"].unique():
-            self.__draw_boxplot(x="label", y="time_to_last_byte",
-                                data=self.data[self.data["filesize_bytes"]==bytes],
-                                title="Time to download last of {0} bytes".format(bytes),
-                                xlabel="Data set", ylabel="Download time (s)")
+        for bytes in np.sort(self.data["filesize_bytes"].unique()):
+            for server in self.data["server"].unique():
+                self.__draw_boxplot(x="label", y="time_to_last_byte",
+                                    data=self.data[(self.data["server"] == server) & (self.data["filesize_bytes"] == bytes)],
+                                    title="Time to download last of {0} bytes from {1} service".format(bytes, server),
+                                    xlabel="Data set", ylabel="Download time (s)")
 
     def __plot_lastbyte_bar(self):
-        for bytes in self.data["filesize_bytes"].unique():
-            self.__draw_barplot(x="label", y="time_to_last_byte",
-                                data=self.data[self.data["filesize_bytes"]==bytes],
-                                title="Mean time to download last of {0} bytes".format(bytes),
-                                xlabel="Data set", ylabel="Downloads time (s)")
+        for bytes in np.sort(self.data["filesize_bytes"].unique()):
+            for server in self.data["server"].unique():
+                self.__draw_barplot(x="label", y="time_to_last_byte",
+                                    data=self.data[(self.data["server"] == server) & (self.data["filesize_bytes"] == bytes)],
+                                    title="Mean time to download last of {0} bytes from {1} service".format(bytes, server),
+                                    xlabel="Data set", ylabel="Downloads time (s)")
 
     def __plot_lastbyte_time(self):
-        for bytes in self.data["filesize_bytes"].unique():
-            self.__draw_timeplot(x="start", y="time_to_last_byte", hue="label", hue_name="Data set",
-                                 data=self.data[self.data["filesize_bytes"] == bytes],
-                                 title="Time to download last of {0} bytes over time".format(bytes),
-                                 xlabel="Download start time", ylabel="Download time (s)")
+        for bytes in np.sort(self.data["filesize_bytes"].unique()):
+            for server in self.data["server"].unique():
+                self.__draw_timeplot(x="start", y="time_to_last_byte", hue="label", hue_name="Data set",
+                                     data=self.data[(self.data["server"] == server) & (self.data["filesize_bytes"] == bytes)],
+                                     title="Time to download last of {0} bytes from {1} service over time".format(bytes, server),
+                                     xlabel="Download start time", ylabel="Download time (s)")
 
     def __plot_downloads_count(self):
-        for bytes in self.data["filesize_bytes"].unique():
-            self.__draw_countplot(x="label",
-                                 data=self.data[self.data["filesize_bytes"] == bytes],
-                                 xlabel="Data set", ylabel="Downloads completed (#)",
-                                 title="Number of downloads of {0} bytes completed".format(bytes))
+        for bytes in np.sort(self.data["filesize_bytes"].unique()):
+            for server in self.data["server"].unique():
+                self.__draw_countplot(x="label",
+                                     data=self.data[(self.data["server"] == server) & (self.data["filesize_bytes"] == bytes)],
+                                     xlabel="Data set", ylabel="Downloads completed (#)",
+                                     title="Number of downloads of {0} bytes completed from {1} service".format(bytes, server))
 
     def __plot_errors_count(self):
-        if "error_code" in self.data.columns:
-            self.__draw_countplot(x="error_code", hue="label", hue_name="Data set", data=self.data,
-                                  xlabel="Error code", ylabel="Downloads failed (#)",
-                                  title="Number of downloads failed")
+        for server in self.data["server"].unique():
+            if "error_code" in self.data.columns and self.data[self.data["server"] == server]["error_code"].count() > 0:
+                self.__draw_countplot(x="error_code", hue="label", hue_name="Data set",
+                                      data=self.data[self.data["server"] == server],
+                                      xlabel="Error code", ylabel="Downloads failed (#)",
+                                      title="Number of downloads failed from {0} service".format(server))
 
     def __plot_errors_time(self):
-        if "error_code" in self.data.columns:
-            self.__draw_stripplot(x="start", y="error_code", hue="label", hue_name="Data set",
-                                 data = self.data,
-                                 xlabel="Download start time", ylabel="Error code",
-                                 title="Downloads failed over time")
+        for server in self.data["server"].unique():
+            if "error_code" in self.data.columns and self.data[self.data["server"] == server]["error_code"].count() > 0:
+                self.__draw_stripplot(x="start", y="error_code", hue="label", hue_name="Data set",
+                                     data=self.data[self.data["server"] == server],
+                                     xlabel="Download start time", ylabel="Error code",
+                                     title="Downloads failed over time from {0} service".format(server))
 
     def __draw_ecdf(self, x, hue, hue_name, data, title, xlabel, ylabel):
         data = data.dropna(subset=[x])
