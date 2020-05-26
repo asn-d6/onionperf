@@ -19,18 +19,6 @@ from stem.response import ControlMessage, convert
 # onionperf imports
 from . import util
 
-ERRORS = {  'AUTH' : 'TGEN/AUTH',
-            'READ' : 'TGEN/READ',
-            'STALLOUT' : 'TGEN/STALLOUT',
-            'TIMEOUT' : 'TGEN/TIMEOUT',
-            'PROXY' : 'TOR',
-            'PROXY_CANT_ATTACH' : 'TOR/CANT_ATTACH',
-            'PROXY_DESTROY' : 'TOR/DESTROY',
-            'PROXY_END_TIMEOUT' : 'TOR/END/TIMEOUT',
-            'PROXY_END_CONNECTREFUSED' : 'TOR/END/CONNECTREFUSED',
-            'PROXY_RESOLVEFAILED' : 'TOR/RESOLVEFAILED',
-            'PROXY_TIMEOUT' : 'TOR/TIMEOUT' }
-
 class Analysis(object):
 
     def __init__(self, nickname=None, ip_address=None):
