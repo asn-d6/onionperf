@@ -56,11 +56,10 @@ class TGenVisualization(Visualization):
                                 "filesize_bytes": transfer_data["filesize_bytes"]}
                     if "elapsed_seconds" in transfer_data:
                         s = transfer_data["elapsed_seconds"]
-                        if "command" in s:
-                            if "first_byte" in s:
-                                transfer["time_to_first_byte"] = s["first_byte"] - s["command"]
-                            if "last_byte" in s:
-                                transfer["time_to_last_byte"] = s["last_byte"] - s["command"]
+                        if "first_byte" in s:
+                            transfer["time_to_first_byte"] = s["first_byte"]
+                        if "last_byte" in s:
+                            transfer["time_to_last_byte"] = s["last_byte"]
                     if "error_code" in transfer_data and transfer_data["error_code"] != "NONE":
                         transfer["error_code"] = transfer_data["error_code"]
                     if "unix_ts_start" in transfer_data:
