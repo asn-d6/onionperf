@@ -6,137 +6,24 @@
 
 import matplotlib; matplotlib.use('Agg')  # for systems without X11
 from matplotlib.backends.backend_pdf import PdfPages
-import pylab, numpy, time
+import time
 from abc import abstractmethod, ABCMeta
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import datetime
 
-'''
-pylab.rcParams.update({
-    'backend': 'PDF',
-    'font.size': 16,
-    'figure.max_num_figures' : 50,
-    'figure.figsize': (6, 4.5),
-    'figure.dpi': 100.0,
-    'figure.subplot.left': 0.10,
-    'figure.subplot.right': 0.95,
-    'figure.subplot.bottom': 0.13,
-    'figure.subplot.top': 0.92,
-    'grid.color': '0.1',
-    'axes.grid' : True,
-    'axes.titlesize' : 'small',
-    'axes.labelsize' : 'small',
-    'axes.formatter.limits': (-4, 4),
-    'xtick.labelsize' : 'small',
-    'ytick.labelsize' : 'small',
-    'lines.linewidth' : 2.0,
-    'lines.markeredgewidth' : 0.5,
-    'lines.markersize' : 10,
-    'legend.fontsize' : 'x-small',
-    'legend.fancybox' : False,
-    'legend.shadow' : False,
-    'legend.ncol' : 1.0,
-    'legend.borderaxespad' : 0.5,
-    'legend.numpoints' : 1,
-    'legend.handletextpad' : 0.5,
-    'legend.handlelength' : 1.6,
-    'legend.labelspacing' : .75,
-    'legend.markerscale' : 1.0,
-    'ps.useafm' : True,
-    'pdf.use14corefonts' : True,
-    'text.usetex' : True,
-})
-'''
-
 class Visualization(object, metaclass=ABCMeta):
 
     def __init__(self):
         self.datasets = []
 
-    def add_dataset(self, analysis, label, lineformat):
-        self.datasets.append((analysis, label, lineformat))
+    def add_dataset(self, analysis, label):
+        self.datasets.append((analysis, label))
 
     @abstractmethod
     def plot_all(self, output_prefix):
         pass
-
-class TorVisualization(Visualization):
-
-    def plot_all(self, output_prefix, relays_only=False):
-        self.relays_only = relays_only
-        if len(self.datasets) > 0:
-            prefix = output_prefix + '.' if output_prefix is not None else ''
-            ts = time.strftime("%Y-%m-%d_%H:%M:%S")
-            self.page = PdfPages("{0}tor.onionperf.viz.{1}.pdf".format(prefix, ts))
-            self.__plot_bytes(direction="bytes_read")
-            self.__plot_bytes(direction="bytes_written")
-            self.page.close()
-
-    def __plot_bytes(self, direction="bytes_written"):
-        mafig = pylab.figure()
-        allcdffig = pylab.figure()
-        eachcdffig = pylab.figure()
-
-        for (anal, label, lineformat) in self.datasets:
-            tput = {}
-            pertput = []
-            for node in anal.get_nodes():
-                if self.relays_only and 'relay' not in node and 'thority' not in node: continue
-                d = anal.get_tor_bandwidth_summary(node, direction)
-                if d is None: continue
-                for tstr in d:
-                    mib = d[tstr] / 1048576.0
-                    t = int(tstr)
-                    if t not in tput: tput[t] = 0
-                    tput[t] += mib
-                    pertput.append(mib)
-
-            pylab.figure(mafig.number)
-            x = sorted(tput.keys())
-            y = [tput[t] for t in x]
-            y_ma = movingaverage(y, 60)
-            pylab.scatter(x, y, s=0.1)
-            pylab.plot(x, y_ma, lineformat, label=label)
-
-            pylab.figure(allcdffig.number)
-            x, y = getcdf(y)
-            pylab.plot(x, y, lineformat, label=label)
-
-            pylab.figure(eachcdffig.number)
-            x, y = getcdf(pertput)
-            pylab.plot(x, y, lineformat, label=label)
-
-        pylab.figure(mafig.number)
-        pylab.xlabel("Tick (s)")
-        pylab.ylabel("Throughput (MiB/s)")
-        pylab.xlim(xmin=0.0)
-        pylab.ylim(ymin=0.0)
-        pylab.title("60 second moving average throughput, {0}, all relays".format("write" if direction == "bytes_written" else "read"))
-        pylab.legend(loc="lower right")
-        self.page.savefig()
-        pylab.close()
-        del(mafig)
-
-        pylab.figure(allcdffig.number)
-        pylab.xlabel("Throughput (MiB/s)")
-        pylab.ylabel("Cumulative Fraction")
-        pylab.title("1 second throughput, {0}, all relays".format("write" if direction == "bytes_written" else "read"))
-        pylab.legend(loc="lower right")
-        self.page.savefig()
-        pylab.close()
-        del(allcdffig)
-
-        pylab.figure(eachcdffig.number)
-        # pylab.xscale('log')
-        pylab.xlabel("Throughput (MiB/s)")
-        pylab.ylabel("Cumulative Fraction")
-        pylab.title("1 second throughput, {0}, each relay".format("write" if direction == "bytes_written" else "read"))
-        pylab.legend(loc="lower right")
-        self.page.savefig()
-        pylab.close()
-        del(eachcdffig)
 
 class TGenVisualization(Visualization):
 
@@ -145,9 +32,9 @@ class TGenVisualization(Visualization):
             prefix = output_prefix + '.' if output_prefix is not None else ''
             ts = time.strftime("%Y-%m-%d_%H:%M:%S")
             self.__extract_data_frame()
-            self.data.to_csv("{0}tgen.onionperf.viz.{1}.csv".format(prefix, ts))
+            self.data.to_csv("{0}onionperf.viz.{1}.csv".format(prefix, ts))
             sns.set_context("paper")
-            self.page = PdfPages("{0}tgen.onionperf.viz.{1}.pdf".format(prefix, ts))
+            self.page = PdfPages("{0}onionperf.viz.{1}.pdf".format(prefix, ts))
             self.__plot_firstbyte_ecdf()
             self.__plot_firstbyte_time()
             self.__plot_lastbyte_ecdf()
@@ -161,7 +48,7 @@ class TGenVisualization(Visualization):
 
     def __extract_data_frame(self):
         transfers = []
-        for (analysis, label, lineformat) in self.datasets:
+        for (analysis, label) in self.datasets:
             for client in analysis.get_nodes():
                 tgen_transfers = analysis.get_tgen_transfers(client)
                 for transfer_id, transfer_data in tgen_transfers.items():
@@ -321,28 +208,3 @@ class TGenVisualization(Visualization):
         sns.despine()
         self.page.savefig()
         plt.close()
-
-# helper - compute the window_size moving average over the data in interval
-def movingaverage(interval, window_size):
-    window = numpy.ones(int(window_size)) / float(window_size)
-    return numpy.convolve(interval, window, 'same')
-
-# # helper - cumulative fraction for y axis
-def cf(d): return pylab.arange(1.0, float(len(d)) + 1.0) / float(len(d))
-
-# # helper - return step-based CDF x and y values
-# # only show to the 99th percentile by default
-def getcdf(data, shownpercentile=0.99, maxpoints=10000.0):
-    data.sort()
-    frac = cf(data)
-    k = len(data) / maxpoints
-    x, y, lasty = [], [], 0.0
-    for i in range(int(round(len(data) * shownpercentile))):
-        if i % k > 1.0: continue
-        assert not numpy.isnan(data[i])
-        x.append(data[i])
-        y.append(lasty)
-        x.append(data[i])
-        y.append(frac[i])
-        lasty = frac[i]
-    return x, y
