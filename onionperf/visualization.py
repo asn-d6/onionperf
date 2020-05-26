@@ -75,7 +75,7 @@ class TGenVisualization(Visualization):
 
     def __plot_firstbyte_time(self):
         for bytes in self.data["filesize_bytes"].unique():
-            self.__draw_timeplot(x="start", y="time_to_last_byte", hue="label", hue_name="Data set",
+            self.__draw_timeplot(x="start", y="time_to_first_byte", hue="label", hue_name="Data set",
                                  data=self.data[self.data["filesize_bytes"]==bytes],
                                  title="Time to download first of {0} bytes over time".format(bytes),
                                  xlabel="Download start time", ylabel="Download time (s)")
