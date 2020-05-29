@@ -128,6 +128,11 @@ Only download files through an Onion service (default: disabled) ::
 
 Only download files through the Internet (default: disabled) ::
 
+ --single-onion
+
+Use a single Onion service, which uses a direct circuit between the Onion
+service and the introduction and rendezvous point. ::
+
  --torclient-conf-file FILE
 
 Download files using specified configuration file for the Tor client (default: disabled) ::

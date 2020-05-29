@@ -177,7 +177,7 @@ class Measurement(object):
         self.torclient_conf_file = torclient_conf_file
         self.torserver_conf_file = torserver_conf_file
 
-    def run(self, do_onion=True, do_inet=True, client_tgen_listen_port=58888, client_tgen_connect_ip='0.0.0.0', client_tgen_connect_port=8080, client_tor_ctl_port=59050, client_tor_socks_port=59000,
+    def run(self, do_onion=True, do_inet=True, single_onion=False, client_tgen_listen_port=58888, client_tgen_connect_ip='0.0.0.0', client_tgen_connect_port=8080, client_tor_ctl_port=59050, client_tor_socks_port=59000,
              server_tgen_listen_port=8080, server_tor_ctl_port=59051, server_tor_socks_port=59001):
         '''
         only `server_tgen_listen_port` are "public" and need to be opened on the firewall.
@@ -216,7 +216,14 @@ class Measurement(object):
 
             if do_onion:
                 logging.info("Onion Service private keys will be placed in {0}".format(self.privatedir_path))
-                tor_writable, torctl_writable = self.__start_tor_server(server_tor_ctl_port, server_tor_socks_port, {client_tgen_connect_port:server_tgen_listen_port})
+                # one must not have an open socks port when running a single
+                # onion service.  see tor's man page for more information.
+                if single_onion:
+                    server_tor_socks_port = 0
+                tor_writable, torctl_writable = self.__start_tor_server(server_tor_ctl_port,
+                                                                        server_tor_socks_port,
+                                                                        single_onion,
+                                                                        {client_tgen_connect_port:server_tgen_listen_port})
                 general_writables.append(tor_writable)
                 general_writables.append(torctl_writable)
 
@@ -344,7 +351,7 @@ class Measurement(object):
 
         return tgen_writable
 
-    def create_tor_config(self, control_port, socks_port, tor_datadir, name):
+    def create_tor_config(self, control_port, socks_port, tor_datadir, name, single_onion):
         """
         This function generates a tor configuration based on a default
         template. This template is appended to any tor configuration inherited
@@ -372,6 +379,8 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory 
             tor_config += self.additional_client_conf
         if not 'UseEntryGuards' in tor_config and not 'UseBridges' in tor_config:
             tor_config += "UseEntryGuards 0"
+        if name == "server" and self.single_onion:
+            tor_config += "HiddenServiceSingleHopMode 1\nHiddenServiceNonAnonymousMode 1\n"
         return tor_config
 
     def start_onion_service(self,
@@ -409,16 +418,16 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory 
     def __start_tor_client(self, control_port, socks_port):
         return self.__start_tor("client", control_port, socks_port)
 
-    def __start_tor_server(self, control_port, socks_port, hs_port_mapping):
-        return self.__start_tor("server", control_port, socks_port, hs_port_mapping)
+    def __start_tor_server(self, control_port, socks_port, single_onion, hs_port_mapping):
+        return self.__start_tor("server", control_port, socks_port, single_onion, hs_port_mapping)
 
-    def __start_tor(self, name, control_port, socks_port, hs_port_mapping=None):
+    def __start_tor(self, name, control_port, socks_port, single_onion=False, hs_port_mapping=None):
         logging.info("Starting Tor {0} process with ControlPort={1}, SocksPort={2}...".format(name, control_port, socks_port))
         tor_datadir = "{0}/tor-{1}".format(self.datadir_path, name)
         key_path_v3 = "{0}/os_key_v3".format(self.privatedir_path)
 
         if not os.path.exists(tor_datadir): os.makedirs(tor_datadir)
-        tor_config = self.create_tor_config(control_port,socks_port,tor_datadir,name)
+        tor_config = self.create_tor_config(control_port,socks_port,tor_datadir,name,single_onion)
 
         tor_logpath = "{0}/onionperf.tor.log".format(tor_datadir)
         tor_writable = util.FileWritable(tor_logpath)

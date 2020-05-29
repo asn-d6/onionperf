@@ -206,6 +206,11 @@ def main():
         action="store_true", dest="inet_only",
         default=False)
 
+    measure_parser.add_argument('-s', '--single-onion',
+        help="""use a single onion service""",
+        action="store_true", dest="single_onion",
+        default=False)
+
     measure_parser.add_argument('-n', '--nickname',
         help="""the 'SOURCE' STRING to use in measurement result files produced by OnionPerf""",
         metavar="STRING", type=str,
@@ -339,10 +344,26 @@ def measure(args):
         server_tor_ctl_port = util.get_random_free_port()
         server_tor_socks_port = util.get_random_free_port()
 
-        meas = Measurement(args.torpath, args.tgenpath, args.prefix, args.private_prefix, args.nickname, args.oneshot, args.additional_client_conf, args.torclient_conf_file, args.torserver_conf_file)
-        meas.run(do_onion=not args.inet_only, do_inet=not args.onion_only,
-             client_tgen_listen_port=client_tgen_port, client_tgen_connect_ip=client_connect_ip, client_tgen_connect_port=client_connect_port, client_tor_ctl_port=client_tor_ctl_port, client_tor_socks_port=client_tor_socks_port,
-             server_tgen_listen_port=server_tgen_port, server_tor_ctl_port=server_tor_ctl_port, server_tor_socks_port=server_tor_socks_port)
+        meas = Measurement(args.torpath,
+                           args.tgenpath,
+                           args.prefix,
+                           args.private_prefix,
+                           args.nickname,
+                           args.oneshot,
+                           args.additional_client_conf,
+                           args.torclient_conf_file,
+                           args.torserver_conf_file)
+
+        meas.run(do_onion=not args.inet_only,
+                 do_inet=not args.onion_only,
+                 client_tgen_listen_port=client_tgen_port,
+                 client_tgen_connect_ip=client_connect_ip,
+                 client_tgen_connect_port=client_connect_port,
+                 client_tor_ctl_port=client_tor_ctl_port,
+                 client_tor_socks_port=client_tor_socks_port,
+                 server_tgen_listen_port=server_tgen_port,
+                 server_tor_ctl_port=server_tor_ctl_port,
+                 server_tor_socks_port=server_tor_socks_port)
     else:
         logging.info("Please fix path errors to continue")
 
