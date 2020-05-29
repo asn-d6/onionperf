@@ -10,6 +10,7 @@ import time
 from abc import abstractmethod, ABCMeta
 import matplotlib.pyplot as plt
 import pandas as pd
+from pandas.plotting import register_matplotlib_converters
 import seaborn as sns
 import datetime
 import numpy as np
@@ -18,6 +19,7 @@ class Visualization(object, metaclass=ABCMeta):
 
     def __init__(self):
         self.datasets = []
+        register_matplotlib_converters()
 
     def add_dataset(self, analysis, label):
         self.datasets.append((analysis, label))
