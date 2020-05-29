@@ -96,12 +96,15 @@ class Analysis(object):
             else:
                 self.json_db['data'][nickname] = analysis.json_db['data'][nickname]
 
-    def save(self, filename=None, output_prefix=os.getcwd(), do_compress=True):
+    def save(self, filename=None, output_prefix=os.getcwd(), do_compress=True, date_prefix=None):
         if filename is None:
-            if self.date_filter is None:
-                filename = "onionperf.analysis.json.xz"
+            base_filename = "onionperf.analysis.json.xz"
+            if date_prefix is not None:
+                filename = "{0}.{1}".format(util.date_to_string(date_prefix), base_filename)
+            elif self.date_filter is not None:
+                filename = "{0}.{1}".format(util.date_to_string(self.date_filter), base_filename)
             else:
-                filename = "{}.onionperf.analysis.json.xz".format(util.date_to_string(self.date_filter))
+                filename = base_filename
 
         filepath = os.path.abspath(os.path.expanduser("{0}/{1}".format(output_prefix, filename)))
         if not os.path.exists(output_prefix):

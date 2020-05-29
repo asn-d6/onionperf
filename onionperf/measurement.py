@@ -157,10 +157,10 @@ def logrotate_thread_task(writables, tgen_writable, torctl_writable, docroot, ni
                         anal.add_torctl_file(torctl_writable.rotate_file(filename_datetime=next_midnight))
 
                     # run the analysis, i.e. parse the files
-                    anal.analyze(do_simple=False, date_filter=next_midnight.date())
+                    anal.analyze(do_simple=False)
 
                     # save the results in onionperf json format in the www docroot
-                    anal.save(output_prefix=docroot, do_compress=True)
+                    anal.save(output_prefix=docroot, do_compress=True, date_prefix=next_midnight.date())
 
                     # update the xml index in docroot
                     generate_docroot_index(docroot)
