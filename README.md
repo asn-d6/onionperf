@@ -36,7 +36,7 @@ For a dockerized setup, see https://github.com/hiromipaw/onionperf-docker
 These are the quick deployment instructions for the current Debian stable distribution.
 
 ```
-sudo apt install git cmake make build-essential gcc libigraph0-dev libglib2.0-dev python3-dev libxml2-dev python3-lxml python3-networkx python3-scipy python3-matplotlib python3-numpy libevent-dev libssl-dev python3-stem python3-pandas python3-seaborn tor
+sudo apt install git cmake make build-essential gcc libigraph0-dev libglib2.0-dev python3-dev libxml2-dev python3-lxml python3-networkx python3-scipy python3-matplotlib python3-numpy libevent-dev libssl-dev python3-stem python3-pandas python3-seaborn python3-setuptools tor
 
 git clone https://github.com/shadow/tgen.git
 cd tgen
@@ -88,7 +88,7 @@ sudo apt install cmake make build-essential gcc libigraph0-dev libglib2.0-dev py
 The easiest way to satisfy all system dependencies is to use a package manager.
 
 ```
-apt install tor libxml2-dev python3-lxml python3-networkx python3-scipy python3-matplotlib python3-numpy python3-stem python3-pandas python3-seaborn
+apt install tor libxml2-dev python3-lxml python3-networkx python3-scipy python3-matplotlib python3-numpy python3-stem python3-pandas python3-seaborn python3-setuptools
 
 ```
 
@@ -192,6 +192,16 @@ Otherwise:
 python3 setup.py build
 python3 setup.py install
 ```
+
+The installation step for Onionperf can be omitted, and instead Onionperf can run directly from the cloned repository:
+
+```
+git clone https://github.com/torproject/onionperf
+cd onionperf/onionperf
+PYTHONPATH=.. python3 onionperf
+```
+
+Dependencies (with the exception of ```python3-setuptools```) must be installed for Onionperf to run in this way.
 
 ## Run OnionPerf
 
