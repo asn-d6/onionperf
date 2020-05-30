@@ -352,7 +352,8 @@ def measure(args):
                            args.oneshot,
                            args.additional_client_conf,
                            args.torclient_conf_file,
-                           args.torserver_conf_file)
+                           args.torserver_conf_file,
+                           args.single_onion)
 
         meas.run(do_onion=not args.inet_only,
                  do_inet=not args.onion_only,
