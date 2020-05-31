@@ -21,8 +21,8 @@ class Visualization(object, metaclass=ABCMeta):
         self.datasets = []
         register_matplotlib_converters()
 
-    def add_dataset(self, analysis, label):
-        self.datasets.append((analysis, label))
+    def add_dataset(self, analyses, label):
+        self.datasets.append((analyses, label))
 
     @abstractmethod
     def plot_all(self, output_prefix):
@@ -51,24 +51,25 @@ class TGenVisualization(Visualization):
 
     def __extract_data_frame(self):
         transfers = []
-        for (analysis, label) in self.datasets:
-            for client in analysis.get_nodes():
-                tgen_transfers = analysis.get_tgen_transfers(client)
-                for transfer_id, transfer_data in tgen_transfers.items():
-                    transfer = {"transfer_id": transfer_id, "label": label,
-                                "filesize_bytes": transfer_data["filesize_bytes"]}
-                    transfer["server"] = "onion" if ".onion:" in transfer_data["endpoint_remote"] else "public"
-                    if "elapsed_seconds" in transfer_data:
-                        s = transfer_data["elapsed_seconds"]
-                        if "first_byte" in s:
-                            transfer["time_to_first_byte"] = s["first_byte"]
-                        if "last_byte" in s:
-                            transfer["time_to_last_byte"] = s["last_byte"]
-                    if "error_code" in transfer_data and transfer_data["error_code"] != "NONE":
-                        transfer["error_code"] = transfer_data["error_code"]
-                    if "unix_ts_start" in transfer_data:
-                        transfer["start"] = datetime.datetime.utcfromtimestamp(transfer_data["unix_ts_start"])
-                    transfers.append(transfer)
+        for (analyses, label) in self.datasets:
+            for analysis in analyses:
+                for client in analysis.get_nodes():
+                    tgen_transfers = analysis.get_tgen_transfers(client)
+                    for transfer_id, transfer_data in tgen_transfers.items():
+                        transfer = {"transfer_id": transfer_id, "label": label,
+                                    "filesize_bytes": transfer_data["filesize_bytes"]}
+                        transfer["server"] = "onion" if ".onion:" in transfer_data["endpoint_remote"] else "public"
+                        if "elapsed_seconds" in transfer_data:
+                            s = transfer_data["elapsed_seconds"]
+                            if "first_byte" in s:
+                                transfer["time_to_first_byte"] = s["first_byte"]
+                            if "last_byte" in s:
+                                transfer["time_to_last_byte"] = s["last_byte"]
+                        if "error_code" in transfer_data and transfer_data["error_code"] != "NONE":
+                            transfer["error_code"] = transfer_data["error_code"]
+                        if "unix_ts_start" in transfer_data:
+                            transfer["start"] = datetime.datetime.utcfromtimestamp(transfer_data["unix_ts_start"])
+                        transfers.append(transfer)
         self.data = pd.DataFrame.from_records(transfers, index="transfer_id")
 
     def __plot_firstbyte_ecdf(self):
