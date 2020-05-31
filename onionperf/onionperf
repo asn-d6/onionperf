@@ -457,17 +457,38 @@ def type_str_date_in(value):
 # a custom action for passing in experimental data directories when plotting
 class PathStringArgsAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        # extract the path to our data, and the label for the legend
-        p = os.path.abspath(os.path.expanduser(values[0]))
-        s = values[1]
-        # check the path exists
-        if not os.path.exists(p): raise argparse.ArgumentError(self, "The supplied path does not exist: '{0}'".format(p))
+        # at least two arguments are required
+        if len(values)<2: raise argparse.ArgumentError(self, "Must specify at least one path and one data label")
+
+        # extract the paths to our data, and the label for the legend
+        label = values[-1]
+        # fail if the label is a path
+        check_label = os.path.abspath(os.path.expanduser(label))
+        if os.path.exists(check_label):
+            raise argparse.ArgumentError(self, "The supplied label cannot be a path")
+
+        paths = values[:-1]
+        dir_paths = []
+        for item in paths:
+            p = os.path.abspath(os.path.expanduser(item))
+            if not os.path.exists(p): raise argparse.ArgumentError(self, "The supplied path does not exist: '{0}'".format(p))
+            if os.path.isdir(p):
+                from onionperf import reprocessing
+                dir_paths.extend(reprocessing.collect_logs(item, "*json*"))
+
+        # remove any directories from the list of paths
+        paths = [p for p in paths if not os.path.isdir(p)]
+        # add all json.xz files found in directories to the list of paths
+        paths.extend(dir_paths)
+        # remove any duplicates
+        paths = list(set(paths))
+
         # remove the default
         if "_didremovedefault" not in namespace:
             setattr(namespace, self.dest, [])
             setattr(namespace, "_didremovedefault", True)
         # append out new experiment path
         dest = getattr(namespace, self.dest)
-        dest.append((p, s))
+        dest.append((paths, label))
 
 if __name__ == '__main__': sys.exit(main())
