@@ -18,11 +18,18 @@ from . import analysis, monitor, model, util
 
 def generate_docroot_index(docroot_path):
     root = etree.Element("files")
-    filepaths = [f for f in os.listdir(docroot_path) if os.path.isfile(os.path.abspath('/'.join([docroot_path, f])))]
-    for filename in filepaths:
-        e = etree.SubElement(root, "file")
-        e.set("name", filename)
-    with open("{0}/index.xml".format(docroot_path), 'wt') as f: print(etree.tostring(root, pretty_print=True, xml_declaration=True), file=f)
+    with os.scandir(docroot_path) as files:
+        for entry in files:
+            if not entry.name == 'index.xml' and entry.is_file():
+                e = etree.SubElement(root, "file")
+                e.set("name", entry.name)
+                stat_result = entry.stat()
+                e.set("size", str(stat_result.st_size))
+                mtime = datetime.datetime.fromtimestamp(stat_result.st_mtime)
+                e.set("last_modified", mtime.replace(microsecond=0).isoformat(sep=' '))
+    with open("{0}/index.xml".format(docroot_path), 'wb') as f:
+        et = etree.ElementTree(root)
+        et.write(f, pretty_print=True, xml_declaration=True)
 
 def readline_thread_task(instream, q):
     # wait for lines from stdout until the EOF
