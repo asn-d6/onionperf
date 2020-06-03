@@ -474,7 +474,7 @@ class PathStringArgsAction(argparse.Action):
             if not os.path.exists(p): raise argparse.ArgumentError(self, "The supplied path does not exist: '{0}'".format(p))
             if os.path.isdir(p):
                 from onionperf import reprocessing
-                dir_paths.extend(reprocessing.collect_logs(item, "*json*"))
+                dir_paths.extend(reprocessing.collect_logs(item, "*onionperf.analysis.json*"))
 
         # remove any directories from the list of paths
         paths = [p for p in paths if not os.path.isdir(p)]
