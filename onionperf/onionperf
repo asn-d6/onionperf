@@ -467,12 +467,12 @@ class PathStringArgsAction(argparse.Action):
 
         # extract the paths to our data, and the label for the legend
         label = values[-1]
+        paths = values[:-1]
         # fail if the label is a path
         check_label = os.path.abspath(os.path.expanduser(label))
-        if os.path.exists(check_label):
-            raise argparse.ArgumentError(self, "The supplied label cannot be a path")
+        if os.path.exists(check_label) and label not in paths:
+            logging.warning("The label supplied looks like a path: {}".format(label))
 
-        paths = values[:-1]
         dir_paths = []
         for item in paths:
             p = os.path.abspath(os.path.expanduser(item))
