@@ -212,13 +212,6 @@ def main():
         action="store", dest="nickname",
         default=hostname)
 
-    measure_parser.add_argument('-m', '--traffic-model',
-        help="""a file PATH to a TGen graphml XML traffic model, to use *instead* of the
-built-in Torperf (50KiB, 1MiB, 5MiB) traffic model""",
-        metavar="PATH", type=type_str_path_in,
-        action="store", dest="model",
-        default=None)
-
     measure_parser.add_argument('-p', '--prefix',
         help="""a directory PATH prefix where OnionPerf will run""",
         metavar="PATH", type=type_str_dir_path_out,
