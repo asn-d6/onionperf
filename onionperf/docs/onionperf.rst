@@ -168,11 +168,6 @@ A oneshot measurement will run only until one successful download has completed.
 The 'SOURCE' STRING to use in stats files produced by OnionPerf (default: hostname of the current machine)
 ::
 
---traffic-model PATH 
-
-A file PATH to a TGen graphml XML traffic model, to use instead of the built-in Torperf traffic model (default: None)
-::
-
  --prefix PATH
 
 A directory PATH prefix where OnionPerf will run (default: current directory)
