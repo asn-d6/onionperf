@@ -328,13 +328,6 @@ def measure(args):
     # validate paths and run
     if args.torpath is not None and args.tgenpath is not None:
         os.chdir(args.prefix)
-        if args.model:
-            # load custom model instead of Torperf model
-            pass
-        else:
-            # build a Torperf model
-            # model.TorperfModel(tgen_port="{0}".format(tgen_port), tgen_servers=server_urls, socksproxy="127.0.0.1:{0}".format(socks_port))
-            pass
 
         client_connect_ip = args.tgenconnectip
         client_connect_port = args.tgenconnectport
