@@ -271,6 +271,101 @@ specific log files from the `log_rotate` directories. You can also plot the meas
 results from the `json` files by running in `onionperf visualize` mode. See below for
 more details.
 
+#### Measure Tor using arbitrary traffic models
+
+OnionPerf uses `tgen` to serve and fetch data through Tor. By default, the
+traffic is generated using a bulk download model: each transfer performed is
+5MB in size, and transfers are spaced 5 minutes apart.
+
+The class `TorPerfModel` defined in `onionperf/model.py` is used to generate
+this traffic model at runtime:
+
+```
+class TorperfModel(GeneratableTGenModel):
+
+    def __init__(self, tgen_port="8889", tgen_servers=["127.0.0.1:8888"], socksproxy=None):
+        self.tgen_port = tgen_port
+        self.tgen_servers = tgen_servers
+        self.socksproxy = socksproxy
+        self.graph = self.generate()
+
+    def generate(self):
+        server_str = ','.join(self.tgen_servers)
+        g = DiGraph()
+
+        if self.socksproxy is not None:
+            g.add_node("start", serverport=self.tgen_port, peers=server_str, loglevel="info", heartbeat="1 minute", socksproxy=self.socksproxy)
+        else:
+            g.add_node("start", serverport=self.tgen_port, peers=server_str, loglevel="info", heartbeat="1 minute")
+        g.add_node("pause", time="5 minutes")
+        g.add_node("transfer5m", type="get", protocol="tcp", size="5 MiB", timeout="270 seconds", stallout="0 seconds")
+        g.add_edge("start", "pause")
+        g.add_edge("pause", "pause")
+        g.add_edge("pause", "transfer5m")
+
+        return g
+```
+
+Although OnionPerf does not currently support other TGen traffic models out of
+the box, it is possible to modify the code shown above to change the
+behaviour of the default model.
+
+All graph nodes and edges added after the "start" node can be redefined to model
+any custom traffic behaviour. Refer to the [TGen
+documentation](https://github.com/shadow/tgen/blob/master/doc/TGen-Overview.md)
+and [list of traffic model graph
+examples](https://github.com/shadow/tgen/blob/master/tools/scripts/generate_tgen_config.py).
+For example, to model web traffic behaviour, the class can be modified as follows:
+
+```
+class TorperfModel(GeneratableTGenModel):
+
+    def __init__(self, tgen_port="8889", tgen_servers=["127.0.0.1:8888"], socksproxy=None):
+        self.tgen_port = tgen_port
+        self.tgen_servers = tgen_servers
+        self.socksproxy = socksproxy
+        self.graph = self.generate()
+
+    def generate(self):
+        server_str = ','.join(self.tgen_servers)
+        g = DiGraph()
+
+        if self.socksproxy is not None:
+            g.add_node("start", serverport=self.tgen_port, peers=server_str, loglevel="info", heartbeat="1 minute", socksproxy=self.socksproxy)
+        else:
+            g.add_node("start", serverport=self.tgen_port, peers=server_str, loglevel="info", heartbeat="1 minute")
+
+            g.add_node("streamA", sendsize="1 kib", recvsize="1 mib")
+            g.add_node("streamB1", sendsize="10 kib", recvsize="1 mib")
+            g.add_node("streamB2", sendsize="100 kib", recvsize="10 mib")
+            g.add_node("streamB3", sendsize="1 mib", recvsize="100 mib")
+
+            g.add_node("pause_sync")
+            g.add_node("pause", time="1,2,3,4,5,6,7,8,9,10")
+            g.add_node("end", time="1 minute", count="30", recvsize="1 GiB", sendsize="1 GiB")
+
+            # a small first round request
+            g.add_edge("start", "streamA")
+            # second round requests in parallel
+            g.add_edge("streamA", "streamB1")
+            g.add_edge("streamA", "streamB2")
+            g.add_edge("streamA", "streamB3")
+            # wait for both second round streams to finish
+            g.add_edge("streamB1", "pause_sync")
+            g.add_edge("streamB2", "pause_sync")
+            g.add_edge("streamB3", "pause_sync")
+            # check if we should stop
+            g.add_edge("pause_sync", "end")
+            g.add_edge("end", "pause")
+            g.add_edge("pause", "start")
+
+            return g
+```
+
+The new traffic model will only be used for measurements once OnionPerf is reinstalled.
+
+Note that custom code may be required to analyze the log files and visualize the data.
+
 ### Analyze and Visualize Results
 
 OnionPerf runs the data it collects through `analyze` mode every night at midnight to
