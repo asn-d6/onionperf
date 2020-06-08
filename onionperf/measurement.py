@@ -378,7 +378,7 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory 
         if name == "client" and self.additional_client_conf:
             tor_config += self.additional_client_conf
         if not 'UseEntryGuards' in tor_config and not 'UseBridges' in tor_config:
-            tor_config += "UseEntryGuards 0"
+            tor_config += "UseEntryGuards 0\n"
         if name == "server" and self.single_onion:
             tor_config += "HiddenServiceSingleHopMode 1\nHiddenServiceNonAnonymousMode 1\n"
         return tor_config
