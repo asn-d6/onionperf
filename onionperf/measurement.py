@@ -3,7 +3,8 @@
   Authored by Rob Jansen, 2015
   See LICENSE for licensing information
 '''
-import hashlib
+
+import binascii, hashlib
 import os, traceback, subprocess, threading, queue, logging, time, datetime, re, shlex
 from lxml import etree
 
@@ -29,7 +30,7 @@ def generate_docroot_index(docroot_path):
                 e.set("last_modified", mtime.replace(microsecond=0).isoformat(sep=' '))
                 with open(entry, 'rb') as f:
                     fbytes = f.read()
-                    e.set("sha256sum", hashlib.sha256(fbytes).hexdigest())
+                    e.set("sha256", binascii.b2a_base64(hashlib.sha256(fbytes).digest(), newline=False))
     with open("{0}/index.xml".format(docroot_path), 'wb') as f:
         et = etree.ElementTree(root)
         et.write(f, pretty_print=True, xml_declaration=True)
