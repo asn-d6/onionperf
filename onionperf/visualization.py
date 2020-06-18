@@ -44,6 +44,7 @@ class TGenVisualization(Visualization):
             self.__plot_lastbyte_box()
             self.__plot_lastbyte_bar()
             self.__plot_lastbyte_time()
+            self.__plot_throughput_ecdf()
             self.__plot_downloads_count()
             self.__plot_errors_count()
             self.__plot_errors_time()
@@ -61,6 +62,16 @@ class TGenVisualization(Visualization):
                         transfer["server"] = "onion" if ".onion:" in transfer_data["endpoint_remote"] else "public"
                         if "elapsed_seconds" in transfer_data:
                             s = transfer_data["elapsed_seconds"]
+                            if "payload_progress" in s:
+                               # Explanation of the math below for computing Mbps: From filesize_bytes
+                               # and payload_progress fields we can compute the number of seconds that
+                               # have elapsed between receiving bytes 524,288 and 1,048,576, which is a
+                               # total amount of 524,288 bytes or 4,194,304 bits or 4.194304 megabits.
+                               # We want the reciprocal of that value with unit megabits per second.
+                               if transfer_data["filesize_bytes"] == 1048576 and "1.0" in s["payload_progress"]:
+                                   transfer["mbps"] = 4.194304 / (s["payload_progress"]["1.0"] - s["payload_progress"]["0.5"])
+                               if transfer_data["filesize_bytes"] == 5242880 and "0.2" in s["payload_progress"]:
+                                   transfer["mbps"] = 4.194304 / (s["payload_progress"]["0.2"] - s["payload_progress"]["0.1"])
                             if "first_byte" in s:
                                 transfer["time_to_first_byte"] = s["first_byte"]
                             if "last_byte" in s:
@@ -118,6 +129,13 @@ class TGenVisualization(Visualization):
                                      data=self.data[(self.data["server"] == server) & (self.data["filesize_bytes"] == bytes)],
                                      title="Time to download last of {0} bytes from {1} service over time".format(bytes, server),
                                      xlabel="Download start time", ylabel="Download time (s)")
+
+    def __plot_throughput_ecdf(self):
+        for server in self.data["server"].unique():
+            self.__draw_ecdf(x="mbps", hue="label", hue_name="Data set",
+                             data=self.data[self.data["server"] == server],
+                             title="Throughput when downloading from {0} server".format(server),
+                             xlabel="Throughput (Mbps)", ylabel="Cumulative Fraction")
 
     def __plot_downloads_count(self):
         for bytes in np.sort(self.data["filesize_bytes"].unique()):
