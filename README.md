@@ -13,8 +13,6 @@ can later be used to visualize changes in Tor client performance over time.
 
 For more information, see https://git.torproject.org/onionperf
 
-For a dockerized setup, see https://github.com/hiromipaw/onionperf-docker
-
 ## Table of contents
 
 * [Quick deployment instructions](#quick-deployment-instructions)
