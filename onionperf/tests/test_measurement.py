@@ -57,8 +57,8 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory 
     known_config_server = "RunAsDaemon 0\nORPort 0\nDirPort 0\nControlPort 9001\nSocksPort 9050\nSocksListenAddress 127.0.0.1\nClientOnly 1\n\
 WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory /tmp/\nDataDirectoryGroupReadable 1\nLog INFO stdout\nUseEntryGuards 0\n"
 
-    meas = measurement.Measurement(None, None, None, None, None, None,
-                                   "UseBridges 1\n", None, None)
+    meas = measurement.Measurement(None, None, None, None, None,
+                                   "UseBridges 1\n", None, None, False)
     config_client = meas.create_tor_config(9001, 9050, "/tmp/", "client")
     config_server = meas.create_tor_config(9001, 9050, "/tmp/", "server")
     assert_equals(config_client, known_config)
@@ -80,8 +80,8 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory 
     known_config = "RunAsDaemon 0\nORPort 0\nDirPort 0\nControlPort 9001\nSocksPort 9050\nSocksListenAddress 127.0.0.1\nClientOnly 1\n\
 WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory /tmp/\nDataDirectoryGroupReadable 1\nLog INFO stdout\nUseBridges 1\n"
 
-    meas = measurement.Measurement(None, None, None, None, None, None, None,
-                                   absolute_data_path("config"), None)
+    meas = measurement.Measurement(None, None, None, None, None, None,
+                                   absolute_data_path("config"), None, False)
     config_client = meas.create_tor_config(9001, 9050, "/tmp/", "client")
     config_server = meas.create_tor_config(9001, 9050, "/tmp/", "server")
     assert_equals(config_client, known_config)
@@ -103,8 +103,8 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory 
     known_config = "RunAsDaemon 0\nORPort 0\nDirPort 0\nControlPort 9001\nSocksPort 9050\nSocksListenAddress 127.0.0.1\nClientOnly 1\n\
 WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory /tmp/\nDataDirectoryGroupReadable 1\nLog INFO stdout\nUseEntryGuards 0\n"
 
-    meas = measurement.Measurement(None, None, None, None, None, None, None, None,
-                                   absolute_data_path("config"))
+    meas = measurement.Measurement(None, None, None, None, None, None, None,
+                                   absolute_data_path("config"), False)
     config_client = meas.create_tor_config(9001, 9050, "/tmp/", "client")
     config_server = meas.create_tor_config(9001, 9050, "/tmp/", "server")
     assert_equals(config_client, known_config)

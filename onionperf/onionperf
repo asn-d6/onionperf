@@ -154,11 +154,6 @@ def main():
         action="store", dest="tgenpath",
         default=util.which("tgen"))
 
-    measure_parser.add_argument('--oneshot',
-        help="""Enables oneshot mode, onionperf closes on successfully downloading a file""",
-        action="store_true", dest="oneshot",
-        default=False)
-
     measure_parser.add_argument('--additional-client-conf',
         help="""Additional configuration lines for the Tor client, for example bridge lines""",
         metavar="CONFIG", type=str,
@@ -194,6 +189,30 @@ def main():
         metavar="N", type=type_nonnegative_integer,
         action="store", dest="tgenconnectport",
         default=8080)
+
+    measure_parser.add_argument('--tgen-start-pause',
+        help="""the number of seconds TGen should wait before walking through its action graph""",
+        metavar="N", type=int,
+        action="store", dest="tgenstartpause",
+        default=5)
+
+    measure_parser.add_argument('--tgen-intertransfer-pause',
+        help="""the number of seconds TGen should wait in between two transfers""",
+        metavar="N", type=int,
+        action="store", dest="tgenintertransferpause",
+        default=300)
+
+    measure_parser.add_argument('--tgen-transfer-size',
+        help="""the size of the file transfer that TGen will perform (e.g., '5 MiB' or '10 KiB')""",
+        metavar="STRING", type=str,
+        action="store", dest="tgentransfersize",
+        default="5 MiB")
+
+    measure_parser.add_argument('--tgen-num-transfers',
+        help="""the number of file transfers that TGen will perform""",
+        metavar="N", type=int,
+        action="store", dest="tgennumtransfers",
+        default=0)
 
     onion_or_inet_only_group = measure_parser.add_mutually_exclusive_group()
 
@@ -327,7 +346,8 @@ def monitor(args):
     writer.close()
 
 def measure(args):
-    from onionperf.measurement import Measurement
+    from onionperf.measurement import Measurement, TGenConf
+    from onionperf.model import TGenModelConf
 
     # check paths
     args.torpath = util.find_path(args.torpath, "tor")
@@ -347,12 +367,27 @@ def measure(args):
         server_tor_ctl_port = util.get_random_free_port()
         server_tor_socks_port = util.get_random_free_port()
 
+        tgen_client_conf = TGenConf(listen_port=client_tgen_port,
+                                    connect_ip=client_connect_ip,
+                                    connect_port=client_connect_port,
+                                    tor_ctl_port=client_tor_ctl_port,
+                                    tor_socks_port=client_tor_socks_port)
+
+        tgen_server_conf = TGenConf(listen_port=server_tgen_port,
+                                    tor_ctl_port=server_tor_ctl_port,
+                                    tor_socks_port=server_tor_socks_port)
+
+        tgen_model = TGenModelConf(initial_pause=args.tgenstartpause,
+                                   transfer_size=args.tgentransfersize,
+                                   num_transfers=args.tgennumtransfers,
+                                   continuous_transfers=args.tgennumtransfers == 0,
+                                   inter_transfer_pause=args.tgenintertransferpause)
+
         meas = Measurement(args.torpath,
                            args.tgenpath,
                            args.prefix,
                            args.private_prefix,
                            args.nickname,
-                           args.oneshot,
                            args.additional_client_conf,
                            args.torclient_conf_file,
                            args.torserver_conf_file,
@@ -360,14 +395,9 @@ def measure(args):
 
         meas.run(do_onion=not args.inet_only,
                  do_inet=not args.onion_only,
-                 client_tgen_listen_port=client_tgen_port,
-                 client_tgen_connect_ip=client_connect_ip,
-                 client_tgen_connect_port=client_connect_port,
-                 client_tor_ctl_port=client_tor_ctl_port,
-                 client_tor_socks_port=client_tor_socks_port,
-                 server_tgen_listen_port=server_tgen_port,
-                 server_tor_ctl_port=server_tor_ctl_port,
-                 server_tor_socks_port=server_tor_socks_port)
+                 tgen_model=tgen_model,
+                 tgen_client_conf=tgen_client_conf,
+                 tgen_server_conf=tgen_server_conf)
     else:
         logging.info("Please fix path errors to continue")
 

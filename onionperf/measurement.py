@@ -15,6 +15,16 @@ from stem.control import Controller
 from stem.version import Version, Requirement, get_system_tor_version
 from stem import __version__ as stem_version
 
+class TGenConf(object):
+    """Represents a TGen configuration, for both client and server."""
+    def __init__(self, listen_port=None, connect_ip=None, connect_port=None, tor_ctl_port=None, tor_socks_port=None):
+        self.listen_port = str(listen_port)
+        self.tor_ctl_port = tor_ctl_port
+        self.tor_socks_port = tor_socks_port
+        # TGen clients use connect_ip and connect_port.
+        self.connect_ip = connect_ip
+        self.connect_port = connect_port
+
 # onionperf imports
 from . import analysis, monitor, model, util
 
@@ -173,12 +183,11 @@ def logrotate_thread_task(writables, tgen_writable, torctl_writable, docroot, ni
 
 class Measurement(object):
 
-    def __init__(self, tor_bin_path, tgen_bin_path, datadir_path, privatedir_path, nickname, oneshot, additional_client_conf=None, torclient_conf_file=None, torserver_conf_file=None, single_onion=False):
+    def __init__(self, tor_bin_path, tgen_bin_path, datadir_path, privatedir_path, nickname, additional_client_conf=None, torclient_conf_file=None, torserver_conf_file=None, single_onion=False):
         self.tor_bin_path = tor_bin_path
         self.tgen_bin_path = tgen_bin_path
         self.datadir_path = datadir_path
         self.privatedir_path = privatedir_path
-        self.oneshot = oneshot
         self.nickname = nickname
         self.threads = None
         self.done_event = None
@@ -190,19 +199,29 @@ class Measurement(object):
         self.torserver_conf_file = torserver_conf_file
         self.single_onion = single_onion
 
-    def run(self, do_onion=True, do_inet=True, client_tgen_listen_port=58888, client_tgen_connect_ip='0.0.0.0', client_tgen_connect_port=8080, client_tor_ctl_port=59050, client_tor_socks_port=59000,
-             server_tgen_listen_port=8080, server_tor_ctl_port=59051, server_tor_socks_port=59001):
+    def run(self, do_onion=True, do_inet=True, tgen_model=None, tgen_client_conf=None, tgen_server_conf=None):
         '''
-        only `server_tgen_listen_port` are "public" and need to be opened on the firewall.
-        if `client_tgen_connect_port` != `server_tgen_listen_port`, then you should have installed a forwarding rule in the firewall.
+        only `tgen_server_conf.listen_port` are "public" and need to be opened on the firewall.
+        if `tgen_client_conf.connect_port` != `tgen_server_conf.listen_port`, then you should have installed a forwarding rule in the firewall.
         all ports need to be unique though, and unique among multiple onionperf instances.
 
         here are some sane defaults:
-        client_tgen_listen_port=58888, client_tgen_connect_port=8080, client_tor_ctl_port=59050, client_tor_socks_port=59000,
-        server_tgen_listen_port=8080, server_tor_ctl_port=59051, server_tor_socks_port=59001
+        tgen_client_conf.listen_port=58888, tgen_client_conf.connect_port=8080, tgen_client_conf.tor_ctl_port=59050, tgen_client_conf.tor_socks_port=59000,
+        tgen_server_conf.listen_port=8080, tgen_server_conf.tor_ctl_port=59051, tgen_server_conf.tor_socks_port=59001
         '''
         self.threads = []
         self.done_event = threading.Event()
+
+        if tgen_client_conf is None:
+            tgen_client_conf = TGenConf(listen_port=58888,
+                                        connect_ip='0.0.0.0',
+                                        connect_port=8080,
+                                        tor_ctl_port=59050,
+                                        tor_socks_port=59000)
+        if tgen_server_conf is None:
+            tgen_server_conf = TGenConf(listen_port=8080,
+                                        tor_ctl_port=59051,
+                                        tor_socks_port=59001)
 
         # if ctrl-c is pressed, shutdown child processes properly
         try:
@@ -225,52 +244,53 @@ class Measurement(object):
             tgen_client_writable, torctl_client_writable = None, None
 
             if do_onion or do_inet:
-                general_writables.append(self.__start_tgen_server(server_tgen_listen_port))
+                tgen_model.port = tgen_server_conf.listen_port
+                general_writables.append(self.__start_tgen_server(tgen_model))
 
             if do_onion:
                 logging.info("Onion Service private keys will be placed in {0}".format(self.privatedir_path))
                 # one must not have an open socks port when running a single
                 # onion service.  see tor's man page for more information.
                 if self.single_onion:
-                    server_tor_socks_port = 0
-                tor_writable, torctl_writable = self.__start_tor_server(server_tor_ctl_port,
-                                                                        server_tor_socks_port,
-                                                                        {client_tgen_connect_port:server_tgen_listen_port})
+                    tgen_server_conf.tor_socks_port = 0
+                tor_writable, torctl_writable = self.__start_tor_server(tgen_server_conf.tor_ctl_port,
+                                                                        tgen_server_conf.tor_socks_port,
+                                                                        {tgen_client_conf.connect_port:tgen_server_conf.listen_port})
                 general_writables.append(tor_writable)
                 general_writables.append(torctl_writable)
 
             if do_onion or do_inet:
-                tor_writable, torctl_client_writable = self.__start_tor_client(client_tor_ctl_port, client_tor_socks_port)
+                tor_writable, torctl_client_writable = self.__start_tor_client(tgen_client_conf.tor_ctl_port, tgen_client_conf.tor_socks_port)
                 general_writables.append(tor_writable)
 
             server_urls = []
             if do_onion and self.hs_v3_service_id is not None:
-                server_urls.append("{0}.onion:{1}".format(self.hs_v3_service_id, client_tgen_connect_port))
+                server_urls.append("{0}.onion:{1}".format(self.hs_v3_service_id, tgen_client_conf.connect_port))
             if do_inet:
-                connect_ip = client_tgen_connect_ip if client_tgen_connect_ip != '0.0.0.0' else util.get_ip_address()
-                server_urls.append("{0}:{1}".format(connect_ip, client_tgen_connect_port))
+                connect_ip = tgen_client_conf.connect_ip if tgen_client_conf.connect_ip != '0.0.0.0' else util.get_ip_address()
+                server_urls.append("{0}:{1}".format(connect_ip, tgen_client_conf.connect_port))
+            tgen_model.servers = server_urls
 
             if do_onion or do_inet:
                 assert len(server_urls) > 0
 
-                tgen_client_writable = self.__start_tgen_client(server_urls, client_tgen_listen_port, client_tor_socks_port)
+                tgen_model.port = tgen_client_conf.listen_port
+                tgen_model.socks_port = tgen_client_conf.tor_socks_port
+                tgen_client_writable = self.__start_tgen_client(tgen_model)
 
                 self.__start_log_processors(general_writables, tgen_client_writable, torctl_client_writable)
 
                 logging.info("Bootstrapping finished, entering heartbeat loop")
                 time.sleep(1)
-                if self.oneshot:
-                    logging.info("Onionperf is running in Oneshot mode. It will download a 5M file and shut down gracefully...")
                 while True:
-                    # TODO add status update of some kind? maybe the number of files in the www directory?
-                    # logging.info("Heartbeat: {0} downloads have completed successfully".format(self.__get_download_count(tgen_client_writable.filename)))
-                    if self.oneshot:
+                    if tgen_model.num_transfers:
                         downloads = 0
                         while True:
                             downloads = self.__get_download_count(tgen_client_writable.filename)
-                            if downloads >= 1:
-                               logging.info("Onionperf has downloaded a 5M file in oneshot mode, and will now shut down.")
-                               break
+                            time.sleep(1)
+                            if downloads >= tgen_model.num_transfers:
+                                logging.info("Onionperf has downloaded %d files and will now shut down." % tgen_model.num_transfers)
+                                break
                         else:
                             continue
                         break
@@ -320,35 +340,25 @@ class Measurement(object):
         logrotate.start()
         self.threads.append(logrotate)
 
-    def __start_tgen_client(self, server_urls, tgen_port, socks_port):
-        return self.__start_tgen("client", tgen_port, socks_port, server_urls)
+    def __start_tgen_client(self, tgen_model_conf):
+        return self.__start_tgen("client", tgen_model_conf)
 
-    def __start_tgen_server(self, tgen_port):
-        return self.__start_tgen("server", tgen_port)
+    def __start_tgen_server(self, tgen_model_conf):
+        return self.__start_tgen("server", tgen_model_conf)
 
-    def __start_tgen(self, name, tgen_port, socks_port=None, server_urls=None):
-        logging.info("Starting TGen {0} process on port {1}...".format(name, tgen_port))
+    def __start_tgen(self, name, tgen_model_conf):
+        logging.info("Starting TGen {0} process on port {1}...".format(name, tgen_model_conf.port))
         tgen_datadir = "{0}/tgen-{1}".format(self.datadir_path, name)
         if not os.path.exists(tgen_datadir): os.makedirs(tgen_datadir)
 
         tgen_confpath = "{0}/tgen.graphml.xml".format(tgen_datadir)
         if os.path.exists(tgen_confpath): os.remove(tgen_confpath)
         
-        if socks_port is None:
-            model.ListenModel(tgen_port="{0}".format(tgen_port)).dump_to_file(tgen_confpath)
-            logging.info("TGen server running at 0.0.0.0:{0}".format(tgen_port))
+        if tgen_model_conf.socks_port is None:
+            model.ListenModel(tgen_port="{0}".format(tgen_model_conf.port)).dump_to_file(tgen_confpath)
+            logging.info("TGen server running at 0.0.0.0:{0}".format(tgen_model_conf.port))
         else:
-
-            tgen_model_args = {
-                                  "tgen_port": "{0}".format(tgen_port), 
-                                  "tgen_servers": server_urls,
-                                  "socksproxy": "127.0.0.1:{0}".format(socks_port)
-                              }
-            if self.oneshot:
-                tgen_model = model.OneshotModel(**tgen_model_args)
-            else:
-                tgen_model = model.TorperfModel(**tgen_model_args)
-
+            tgen_model = model.TorperfModel(tgen_model_conf)
             tgen_model.dump_to_file(tgen_confpath)
 
         tgen_logpath = "{0}/onionperf.tgen.log".format(tgen_datadir)

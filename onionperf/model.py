@@ -41,6 +41,21 @@ class TGenLoadableModel(TGenModel):
         model_instance = cls(graph)
         return model_instance
 
+class TGenModelConf(object):
+    """Represents a TGen traffic model configuration."""
+    def __init__(self, initial_pause=0, num_transfers=1, transfer_size="5 MiB",
+                 continuous_transfers=False, inter_transfer_pause=5, port=None, servers=[],
+                 socks_port=None):
+        self.initial_pause = initial_pause
+        self.num_transfers = num_transfers
+        self.transfer_size = transfer_size
+        self.continuous_transfers = continuous_transfers
+        self.inter_transfer_pause = inter_transfer_pause
+        self.port = port
+        self.servers = servers
+        self.socks_port = socks_port
+
+
 class GeneratableTGenModel(TGenModel, metaclass=ABCMeta):
 
     @abstractmethod
@@ -58,59 +73,72 @@ class ListenModel(GeneratableTGenModel):
         g.add_node("start", serverport=self.tgen_port, loglevel="info", heartbeat="1 minute")
         return g
 
+
 class TorperfModel(GeneratableTGenModel):
 
-    def __init__(self, tgen_port="8889", tgen_servers=["127.0.0.1:8888"], socksproxy=None):
-        self.tgen_port = tgen_port
-        self.tgen_servers = tgen_servers
-        self.socksproxy = socksproxy
+    def __init__(self, config):
+        self.config = config
         self.graph = self.generate()
 
     def generate(self):
-        server_str = ','.join(self.tgen_servers)
+        server_str = ','.join(self.config.servers)
         g = DiGraph()
 
-        if self.socksproxy is not None:
-            g.add_node("start", serverport=self.tgen_port, peers=server_str, loglevel="info", heartbeat="1 minute", socksproxy=self.socksproxy)
+        if self.config.socks_port is not None:
+            g.add_node("start",
+                       serverport=self.config.port,
+                       peers=server_str,
+                       loglevel="info",
+                       heartbeat="1 minute",
+                       socksproxy="127.0.0.1:{0}".format(self.config.socks_port))
         else:
-            g.add_node("start", serverport=self.tgen_port, peers=server_str, loglevel="info", heartbeat="1 minute")
-        g.add_node("pause", time="5 minutes")
-        g.add_node("stream5m", sendsize="0", recvsize="5 mib", timeout="270 seconds", stallout="0 seconds")
+            g.add_node("start",
+                       serverport=self.config.port,
+                       peers=server_str,
+                       loglevel="info",
+                       heartbeat="1 minute")
 
+        g.add_node("pause", time="%d seconds" % self.config.initial_pause)
         g.add_edge("start", "pause")
 
-        # after the pause, we start another pause timer while *at the same time* choosing one of
-        # the file sizes and downloading it from one of the servers in the server pool
-        g.add_edge("pause", "pause")
+        # "One-shot mode," i.e., onionperf will stop after the given number of
+        # iterations.  The idea is:
+        # start -> pause -> stream-1 -> pause-1 -> ... -> stream-n -> pause-n -> end
+        if self.config.num_transfers > 0:
+            for i in range(self.config.num_transfers):
+                g.add_node("stream-%d" % i,
+                           sendsize="0",
+                           recvsize=self.config.transfer_size,
+                           timeout="15 seconds",
+                           stallout="10 seconds")
+                g.add_node("pause-%d" % i,
+                           time="%d seconds" % self.config.inter_transfer_pause)
 
-        # these are chosen with weighted probability, change edge 'weight' attributes to adjust probability
-        g.add_edge("pause", "stream5m")
+                g.add_edge("stream-%d" % i, "pause-%d" % i)
+                if i > 0:
+                    g.add_edge("pause-%d" % (i-1), "stream-%d" % i)
+
+            g.add_node("end")
+            g.add_edge("pause", "stream-0")
+            g.add_edge("pause-%d" % (self.config.num_transfers - 1), "end")
+
+        # Continuous mode, i.e., onionperf will not stop.  The idea is:
+        # start -> pause -> stream -> pause
+        #                       ^       |
+        #                       +-------+
+        elif self.config.continuous_transfers:
+            g.add_node("stream",
+                       sendsize="0",
+                       recvsize=self.config.transfer_size,
+                       timeout="15 seconds",
+                       stallout="10 seconds")
+            g.add_node("pause",
+                       time="%d seconds" % self.config.inter_transfer_pause)
+            g.add_edge("pause", "stream")
+            g.add_edge("stream", "pause")
+            g.add_edge("pause", "stream")
 
         return g
-
-class OneshotModel(GeneratableTGenModel):
-
-    def __init__(self, tgen_port="8889", tgen_servers=["127.0.0.1:8888"], socksproxy=None):
-        self.tgen_port = tgen_port
-        self.tgen_servers = tgen_servers
-        self.socksproxy = socksproxy
-        self.graph = self.generate()
-
-    def generate(self):
-        server_str = ','.join(self.tgen_servers)
-        g = DiGraph()
-
-        if self.socksproxy is not None:
-            g.add_node("start", serverport=self.tgen_port, peers=server_str, loglevel="info", heartbeat="1 minute", socksproxy=self.socksproxy)
-        else:
-            g.add_node("start", serverport=self.tgen_port, peers=server_str, loglevel="info", heartbeat="1 minute")
-        g.add_node("stream5m", sendsize="0", recvsize="5 mib", timeout="270 seconds", stallout="0 seconds")
-
-        g.add_edge("start", "stream5m")
-        g.add_edge("stream5m", "start")
-
-        return g
-
 
 
 def dump_example_tgen_torperf_model(domain_name, onion_name):
