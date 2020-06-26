@@ -381,8 +381,8 @@ def analyze(args):
         logging.warning("No logfile paths were given, nothing will be analyzed")
 
     elif (args.tgen_logpath is None or os.path.isfile(args.tgen_logpath)) and (args.torctl_logpath is None or os.path.isfile(args.torctl_logpath)):
-        from onionperf.analysis import Analysis
-        analysis = Analysis(nickname=args.nickname, ip_address=args.ip_address)
+        from onionperf.analysis import OPAnalysis
+        analysis = OPAnalysis(nickname=args.nickname, ip_address=args.ip_address)
         if args.tgen_logpath is not None:
             analysis.add_tgen_file(args.tgen_logpath)
         if args.torctl_logpath is not None:
@@ -403,13 +403,13 @@ def analyze(args):
 
 def visualize(args):
     from onionperf.visualization import TGenVisualization
-    from onionperf.analysis import Analysis
+    from onionperf.analysis import OPAnalysis
 
     tgen_viz = TGenVisualization()
     for (paths, label) in args.datasets:
         analyses = []
         for path in paths:
-            analysis = Analysis.load(filename=path)
+            analysis = OPAnalysis.load(filename=path)
             if analysis is not None:
                analyses.append(analysis)
         tgen_viz.add_dataset(analyses, label)
