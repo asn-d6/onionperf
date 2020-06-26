@@ -400,7 +400,7 @@ class TGenParser(Parser):
     def get_name(self):
         return self.name
 
-class Stream(object):
+class TorStream(object):
     def __init__(self, sid):
         self.stream_id = sid
         self.circuit_id = None
@@ -460,7 +460,7 @@ class Stream(object):
                ' '.join(['%s=%s' % (event, arrived_at)
                for (event, arrived_at) in sorted(self.elapsed_seconds, key=lambda item: item[1])])))
 
-class Circuit(object):
+class TorCircuit(object):
     def __init__(self, cid):
         self.circuit_id = cid
         self.unix_ts_start = None
@@ -543,7 +543,7 @@ class TorCtlParser(Parser):
     def __handle_circuit(self, event, arrival_dt):
         # first make sure we have a circuit object
         cid = int(event.id)
-        circ = self.circuits_state.setdefault(cid, Circuit(cid))
+        circ = self.circuits_state.setdefault(cid, TorCircuit(cid))
         is_hs_circ = True if event.purpose in (CircPurpose.HS_CLIENT_INTRO, CircPurpose.HS_CLIENT_REND, \
                                    CircPurpose.HS_SERVICE_INTRO, CircPurpose.HS_SERVICE_REND) else False
 
@@ -597,7 +597,7 @@ class TorCtlParser(Parser):
 
     def __handle_stream(self, event, arrival_dt):
         sid = int(event.id)
-        strm = self.streams_state.setdefault(sid, Stream(sid))
+        strm = self.streams_state.setdefault(sid, TorStream(sid))
 
         if event.circ_id is not None:
             strm.set_circ_id(event.circ_id)
