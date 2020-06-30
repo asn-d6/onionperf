@@ -1,446 +1,276 @@
 # OnionPerf
 
-OnionPerf is a utility to track Tor and onion service performance.
+[TOC]
 
-OnionPerf uses multiple processes and threads to download random data
-through Tor while tracking the performance of those downloads. The data is
-served and fetched on localhost using two TGen (traffic generator)
-processes, and is transferred through Tor using Tor client processes and
-an ephemeral Tor Onion Service. Tor control information and TGen
-performance statistics are logged to disk, analyzed once per day to
-produce a json stats database and files that can feed into Torperf, and
-can later be used to visualize changes in Tor client performance over time.
+## Overview
 
-For more information, see https://git.torproject.org/onionperf
+### What does OnionPerf do?
 
-## Table of contents
+OnionPerf measures performance of bulk file downloads over Tor. Together with its predecessor, Torperf, Onionperf has been used to measure long-term performance trends in the Tor network since 2009. It is also being used to perform short-term performance experiments to compare different Tor configurations or implementations.
 
-* [Quick deployment instructions](#quick-deployment-instructions)
-* [Step-by-step installation instructions](#step-by-step-installation-instructions)
-  - [Get OnionPerf](#get-onionperf)
-  - [Install System Dependencies](#install-system-dependencies)
-  - [Install Python modules](#install-python-modules)
-  - [Build Tor](#build-tor)
-  - [Build TGen Traffic Generator](#build-tgen-traffic-generator)
-  - [Build and Install OnionPerf](#build-and-install-onionperf)
-* [Run OnionPerf](#run-onionperf)
-  - [Measure Tor](#measure-tor)
-  - [Analyze and Visualize Results](#analyze-and-visualize-results)
-  - [Troubleshooting](#troubleshooting)
-* [Contribute](#contribute)
+OnionPerf uses multiple processes and threads to download random data through Tor while tracking the performance of those downloads. The data is served and fetched on localhost using two TGen (traffic generator) processes, and is transferred through Tor using Tor client processes and an ephemeral Tor onion service. Tor control information and TGen performance statistics are logged to disk and analyzed once per day to produce a JSON analysis file that can later be used to visualize changes in Tor client performance over time.
 
-## Quick deployment instructions
+### What does OnionPerf *not* do?
 
-These are the quick deployment instructions for the current Debian stable distribution.
+OnionPerf does not attempt to simulate complex traffic patterns like a web-browsing user or a voice-chatting user. It measures a very specific user model: a bulk 5 MiB file download over Tor.
 
-```
-sudo apt install git cmake make build-essential gcc libigraph0-dev libglib2.0-dev python3-dev libxml2-dev python3-lxml python3-networkx python3-scipy python3-matplotlib python3-numpy libevent-dev libssl-dev python3-stem python3-pandas python3-seaborn python3-setuptools tor
+OnionPerf does not interfere with how Tor selects paths and builds circuits, other than setting configuration values as specified by the user. As a result it cannot be used to measure specific relays nor to scan the entire Tor network.
 
-git clone https://github.com/shadow/tgen.git
-cd tgen
-mkdir build
-cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=/home/$USER/.local
-make
-sudo ln -s ~/tgen/build/tgen /usr/bin/tgen
+## Installation
 
-git clone https://github.com/torproject/onionperf
-cd onionperf
-python3 setup.py build
-python3 setup.py install --user
+OnionPerf has a couple dependencies in order to perform measurements or analyze and visualize measurement results. These dependencies include Tor, TGen (traffic generator), and a couple Python packages.
+
+The following description was written with a Debian system in mind but should be transferable to other Linux distributions and possibly even other operating systems.
+
+### Tor
+
+OnionPerf relies on the `tor` binary to start a Tor client on the client side and another one on the server side to host onion services.
+
+The easiest way is to install the `tor` package, which puts the `tor` binary into the `PATH` where OnionPerf will find it. Optionally, systemd can be instructed to make sure that `tor` is never started as a service:
+
+```shell
+sudo apt install tor
+sudo systemctl stop tor.service
+sudo systemctl mask tor.service
 ```
 
-Once the installation finished, you can find the onionperf script in
-`~/.local/bin/`.
+Alternatively, Tor can be built from source:
 
-## Step-by-step installation instructions
-
-Here you can find more detailed instructions for the current Debian stable distribution.
-
-### Get OnionPerf
-
-```
-git clone https://git.torproject.org/onionperf.git
-cd onionperf
-```
-
-### Install System Dependencies
-
-  + **Tor** (>= v0.2.7.3-rc): libevent, openssl
-  + **TGen** (Shadow >= v1.11.1): cmake, glib2, igraph
-  + **OnionPerf**: python3
-
-The easiest way to satisfy all system dependencies is to use a package manager. TGen is not currently packaged and needs to be built from source.
-Note we only provide support for the current Debian Stable distribution.
-
-```
-sudo apt install cmake make build-essential gcc libigraph0-dev libglib2.0-dev python3-dev
-```
-
-### Install Python modules
-
-  + **OnionPerf** python modules: stem (>= v1.7.0), lxml, networkx, numpy, matplotlib.
-
-#### Option 1: Package Manager
-
-The easiest way to satisfy all system dependencies is to use a package manager.
-
-```
-apt install tor libxml2-dev python3-lxml python3-networkx python3-scipy python3-matplotlib python3-numpy python3-stem python3-pandas python3-seaborn python3-setuptools
-
-```
-
-#### Option 2: pip
-
-Python modules can also be installed using `pip`. The python modules that are
-required for each OnionPerf subcommand are as follows:
-
-  + `onionperf monitor`: stem
-  + `onionperf measure`: stem, lxml, networkx
-  + `onionperf analyze`: stem
-  + `onionperf visualize`: scipy, numpy, pylab, matplotlib
-
-You must first satisfy the system/library requirements of each of the python modules.
-Note: pip installation is not recommended as software installed by pip is not verified.
-
-```
-sudo apt-get install python3-dev libxml2 libxml2-dev libxslt1.1 libxslt1-dev libpng12-0 libpng12-dev libfreetype6 libfreetype6-dev
-```
-
-It is recommended to use virtual environments to keep all of the dependencies self-contained and
-to avoid conflicts with your other python projects.
-
-```
-python3 -m venv venv
-source venv/bin/activate
-pip install --upgrade pip # make sure that you have a recent version of pip
-pip install -r requirements.txt # installs all required python modules for all OnionPerf subcommands
-deactivate
-```
-
-If you don't want to use virtualenv, you can install with:
-
-```
-pip install stem lxml networkx scipy numpy matplotlib
-```
-
-**Note**: You may want to skip installing numpy and matplotlib if you don't
-plan to use the `visualize` subcommand, since those tend to require several
-large dependencies.
-
-### Build Tor
-
-**Note**: You can install Tor with apt, although the
-preferred method is to build from source. To install using from backports:
-
-```
-echo 'deb http://deb.debian.org/debian stretch-backports main' >> /etc/apt/sources.list
-apt update
-apt-get -t stretch-backports install tor
-```
-Or, if building from source:
-
-```
-apt install libevent libevent-dev libssl-dev
-```
-
-```
+```shell
+sudo apt install automake build-essential libevent-dev libssl-dev zlib1g-dev
+cd ~/
 git clone https://git.torproject.org/tor.git
-cd tor
+cd tor/
 ./autogen.sh
 ./configure --disable-asciidoc
 make
 ```
 
-### Build TGen Traffic Generator
+In this case the resulting `tor` binary can be found in `~/tor/src/app/tor` and needs to be passed to OnionPerf's `--tor` parameter when doing measurements.
 
-The traffic generator currently exists in the Shadow simulator repository,
-but we will build TGen as an external tool and skip building both the full
-simulator and the TGen simulator plugin.
+### TGen
 
-```
+OnionPerf uses TGen to generate traffic on client and server side for its measurements. Installing dependencies, cloning TGen to a subdirectory in the user's home directory, checking out version 0.0.1, and building TGen is done as follows:
+
+```shell
+sudo apt install cmake libglib2.0-dev libigraph0-dev make
+cd ~/
 git clone https://github.com/shadow/tgen.git
-cd tgen
+cd tgen/
+git checkout -b v0.0.1 v0.0.1
 mkdir build
-cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=/home/$USER/.local
+cd build/
+cmake ..
 make
-ln -s build/tgen /usr/bin/tgen
 ```
 
-### Build and Install OnionPerf
+The TGen binary will be contained in `~/tgen/build/tgen`, which is also the path that needs to be passed to OnionPerf's `--tgen` parameter when doing measurements.
 
-If using pip and virtualenv (run from onionperf base directory):
+### OnionPerf
 
-```
+OnionPerf is written in Python 3. The following instructions assume that a Python virtual environment is being used, even though installation is also possible without that.
+
+The virtual environment is being created, activated, and tested using:
+
+```shell
+sudo apt install python3-venv
+cd ~/
+python3 -m venv venv
 source venv/bin/activate
-pip install -I .
+which python3
+```
+
+The last command should output something like `~/venv/bin/python3` as the path to the `python3` binary used in the virtual environment.
+
+In the next step, the OnionPerf repository is being cloned and requirements are being installed:
+
+```shell
+git clone https://git.torproject.org/onionperf.git
+pip3 install --no-cache -r onionperf/requirements.txt
+```
+
+The next step after that is to install OnionPerf and print out the usage information to see if the installation was successful:
+
+```shell
+cd onionperf/
+python3 setup.py install
+cd ~/
+onionperf --help
+```
+
+The virtual environment is deactivated with the following command:
+
+```shell
 deactivate
 ```
 
-If using just pip:
+However, in order to perform measurements or doing analyses, the virtual environment needs to be activated first. This will ensure all the paths are found.
 
-```
-pip install -I .
-```
 
-Otherwise:
+## Measurement
 
-```
-python3 setup.py build
-python3 setup.py install
-```
+Performing measurements with OnionPerf is done by starting an `onionperf` process that itself starts several other processes and keeps running until it is interrupted by the user. During this time it performs new measurements every 5 minutes and logs measurement results to files.
 
-The installation step for Onionperf can be omitted, and instead Onionperf can run directly from the cloned repository:
+Ideally, OnionPerf is run detached from the terminal session using tmux, systemd, or similar, except for the most simple test runs. The specifics for using these tools are not covered in this document.
 
-```
-git clone https://github.com/torproject/onionperf
-cd onionperf/onionperf
-PYTHONPATH=.. python3 onionperf
-```
+### Starting and stopping measurements
 
-Dependencies (with the exception of ```python3-setuptools```) must be installed for Onionperf to run in this way.
+The most trivial configuration is to measure onion services only. In that case, OnionPerf is taking care of all configurations, and there are no firewall rules or port forwards to take care of.
 
-## Run OnionPerf
+Starting these measurements is as simple as:
 
-OnionPerf has several modes of operation and a help menu for each. For a
-description of each mode, use:
-
-```
-onionperf -h
+```shell
+cd ~/
+onionperf measure --onion-only --tgen ~/tgen/build/tgen --tor ~/tor/src/app/tor
 ```
 
-  + **monitor**: Connect to Tor and log controller events to file
-  + **measure**: Measure Tor and Onion Service Performance using TGen
-  + **analyze**: Analyze Tor and TGen output
-  + **visualize**: Visualize OnionPerf analysis results
+OnionPerf logs its main output on the console and then waits indefinitely until the user presses `CTRL-C` for graceful shutdown. It does not, however, print out measurement results or progress on the console, just a heartbeat message every hour.
 
-### Measure Tor
+OnionPerf's `measure` mode has several command-line parameters for customizing measurements. See the following command for usage information:
 
-To run in measure mode, you will need to give OnionPerf the path to your custom
-'tor' and 'tgen' binary files if they do not exist in your PATH
-environment variable.
-
-```
-./onionperf measure --tor=/home/rob/tor/src/or/tor \
---tgen=/home/rob/shadow/src/plugin/shadow-plugin-tgen/build/tgen
+```shell
+onionperf measure --help
 ```
 
-This will run OnionPerf in measure mode with default ports; a TGen server runs
-on port 8080. Port 8080 **must** be open on your firewall if you want to do
-performance measurements with downloads that exit the Tor network.
+### Output directories and files
 
-By default, OnionPerf will run a TGen client/server pair that transfer traffic
-through Tor and through an ephemeral onion service started by OnionPerf. TGen and Tor
-log data is collected and stored beneath the `onionperf-data` directory, and other
-information about Tor's state during the measurement process is collected from Tor's
-control port and logged to disk.
+OnionPerf writes several files to two subdirectories in the current working directory while doing measurements:
 
-While running, OnionPerf log output is saved to component-specific log files.
-Log files for each OnionPerf component (tgen client, tgen server, tor client, tor
-server) are stored in their own directory, under `onionperf-data`:
+- `onionperf-data/` is the main directory containing measurement results.
+  - `htdocs/` is created at the first UTC midnight after starting and contains measurement analysis result files that can be shared via a local web server.
+    - `$date.onionperf.analysis.json.xz` contains extracted metrics in OnionPerf's analysis JSON format.
+    - `index.xml` contains a directory index with file names, sizes, last-modified times, and SHA-256 digests.
+  - `tgen-client/` is the working directory of the client-side `tgen` process.
+    - `log_archive/` is created at the first UTC midnight after starting and contains compressed log files from previous UTC days.
+    - `onionperf.tgen.log` is the current log file.
+    - `tgen.graphml.xml` is the traffic model file generated by OnionPerf and used by TGen.
+  - `tgen-server/` is the working directory of the server-side `tgen` process with the same structure as `tgen-client/`.
+  - `tor-client/` is the working directory of the client-side `tor` process.
+    - `log_archive/` is created at the first UTC midnight after starting and contains compressed log files from previous UTC days.
+    - `onionperf.tor.log` is the current log file containing log messages by the client-side `tor` process.
+    - `onionperf.torctl.log` is the current log file containing controller events obtained by OnionPerf connecting to the control port of the client-side `tor` process.
+    - `[...]` (several other files written by the client-side `tor` process to its data directory)
+  - `tor-server/` is the working directory of the server-side `tor` process with the same structure as `tor-client/`.
+- `onionperf-private/` contains private keys of the onion services used for measurements and potentially other files that are not meant to be published together with measurement results.
 
- + `tgen-client/onionperf.tgen.log`
- + `tgen-server/onionperf.tgen.log`
- + `tor-client/onionperf.torctl.log`
- + `tor-client/onionperf.tor.log`
- + `tor-server/onionperf.torctl.log`
- + `tor-server/onionperf.tor.log`
+### Changing Tor configurations
 
-Every night at 11:59 UTC, OnionPerf will analyze the latest results from these log
-files using the same parsing functions that are used in the `onionperf analyze`
-subcommand (which is described in more detail below). The analysis produces a
-`onionperf.analysis.json` stats file that contains numerous measurements and other
-contextual information collected during the measurement process. The `README_JSON.md`
-file in this repo describes the format and elements contained in the `json` file.
+OnionPerf generates Tor configurations for both client-side and server-side `tor` processes. There are a few ways to add Tor configuration lines:
 
-The daily generated `json` files are placed in the web docroot and are
-available through the local filesystem in the `onionperf-data/htdocs` directory.
-These files can be shared via a web server such as Apache or nginx.
+- If the `BASETORRC` environment variable is set, OnionPerf appends its own configuration options to the contents of that variable. Example:
 
-Once the analysis is complete, OnionPerf will rotate all log files; each log file
-is moved to a `log_rotate` subdirectory and renamed to include a timestamp. Each
-component has its own collection of log files with timestamps in their own `log_rotate`
-subdirectories.
+  ```shell
+  BASETORRC=$'Option1 Foo\nOption2 Bar\n' onionperf ...
+  ```
 
-You can reproduce the same `json` file that is automatically produced every day while
-running in `onionperf measure` mode. To do this, you would run `onionperf analyze` on
-specific log files from the `log_rotate` directories. You can also plot the measurement
-results from the `json` files by running in `onionperf visualize` mode. See below for
-more details.
+- If the `--torclient-conf-file`  and/or  `--torserver-conf-file`  command-line arguments are given, the contents of those files are appended to the configurations of client-side and/or server-side `tor` process.
+- If the `--additional-client-conf` command-line argument is given, its content is appended to the configuration of the client-side  `tor`  process.
 
-#### Measure Tor using arbitrary traffic models
+These options can be used, for example, to change the default measurement setup use bridges (or pluggable transports) by passing bridge addresses as additional client configuration lines as follows:
 
-OnionPerf uses `tgen` to serve and fetch data through Tor. By default, the
-traffic is generated using a bulk download model: each transfer performed is
-5MB in size, and transfers are spaced 5 minutes apart.
-
-The class `TorPerfModel` defined in `onionperf/model.py` is used to generate
-this traffic model at runtime:
-
-```
-class TorperfModel(GeneratableTGenModel):
-
-    def __init__(self, tgen_port="8889", tgen_servers=["127.0.0.1:8888"], socksproxy=None):
-        self.tgen_port = tgen_port
-        self.tgen_servers = tgen_servers
-        self.socksproxy = socksproxy
-        self.graph = self.generate()
-
-    def generate(self):
-        server_str = ','.join(self.tgen_servers)
-        g = DiGraph()
-
-        if self.socksproxy is not None:
-            g.add_node("start", serverport=self.tgen_port, peers=server_str, loglevel="info", heartbeat="1 minute", socksproxy=self.socksproxy)
-        else:
-            g.add_node("start", serverport=self.tgen_port, peers=server_str, loglevel="info", heartbeat="1 minute")
-        g.add_node("pause", time="5 minutes")
-        g.add_node("transfer5m", type="get", protocol="tcp", size="5 MiB", timeout="270 seconds", stallout="0 seconds")
-        g.add_edge("start", "pause")
-        g.add_edge("pause", "pause")
-        g.add_edge("pause", "transfer5m")
-
-        return g
+```shell
+onionperf measure --additional-client-conf="UseBridges 1\nBridge 72.14.177.231:9001 AC0AD4107545D4AF2A595BC586255DEA70AF119D\nBridge 195.91.239.8:9001 BA83F62551545655BBEBBFF353A45438D73FD45A\nBridge 148.63.111.136:35577 768C8F8313FF9FF8BBC915898343BC8B238F3770"
 ```
 
-Although OnionPerf does not currently support other TGen traffic models out of
-the box, it is possible to modify the code shown above to change the
-behaviour of the default model.
+### Changing the TGen traffic model
 
-All graph nodes and edges added after the "start" node can be redefined to model
-any custom traffic behaviour. Refer to the [TGen
-documentation](https://github.com/shadow/tgen/blob/master/doc/TGen-Overview.md)
-and [list of traffic model graph
-examples](https://github.com/shadow/tgen/blob/master/tools/scripts/generate_tgen_config.py).
-For example, to model web traffic behaviour, the class can be modified as follows:
+OnionPerf is a relatively simple tool that can be adapted to do more complex measurements beyond what can be configured on the command line.
 
-```
-class TorperfModel(GeneratableTGenModel):
+For example, the hard-coded traffic model generated by OnionPerf and executed by the TGen processes is to send a small request from client to server and receive a relatively large response of 5 MiB of random data back. This model can be changed by editing `~/onionperf/onionperf/model.py`, rebuilding, and restarting measurements. For specifics, see the TGen documentation.
 
-    def __init__(self, tgen_port="8889", tgen_servers=["127.0.0.1:8888"], socksproxy=None):
-        self.tgen_port = tgen_port
-        self.tgen_servers = tgen_servers
-        self.socksproxy = socksproxy
-        self.graph = self.generate()
+### Sharing measurement results
 
-    def generate(self):
-        server_str = ','.join(self.tgen_servers)
-        g = DiGraph()
+Measurement results can be further analyzed and visualized on the measuring host. But in many cases it's more conventient to do analysis and visualization on another host, also to compare measurements from different hosts to each other.
 
-        if self.socksproxy is not None:
-            g.add_node("start", serverport=self.tgen_port, peers=server_str, loglevel="info", heartbeat="1 minute", socksproxy=self.socksproxy)
-        else:
-            g.add_node("start", serverport=self.tgen_port, peers=server_str, loglevel="info", heartbeat="1 minute")
+There are at least two common ways of sharing measurement results:
 
-            g.add_node("streamA", sendsize="1 kib", recvsize="1 mib")
-            g.add_node("streamB1", sendsize="10 kib", recvsize="1 mib")
-            g.add_node("streamB2", sendsize="100 kib", recvsize="10 mib")
-            g.add_node("streamB3", sendsize="1 mib", recvsize="100 mib")
+1. Creating a tarball of the `onionperf-data/` directory; and
+2. Using a local web server to serve the contents of the `onionperf-data/` directory.
 
-            g.add_node("pause_sync")
-            g.add_node("pause", time="1,2,3,4,5,6,7,8,9,10")
-            g.add_node("end", time="1 minute", count="30", recvsize="1 GiB", sendsize="1 GiB")
-
-            # a small first round request
-            g.add_edge("start", "streamA")
-            # second round requests in parallel
-            g.add_edge("streamA", "streamB1")
-            g.add_edge("streamA", "streamB2")
-            g.add_edge("streamA", "streamB3")
-            # wait for both second round streams to finish
-            g.add_edge("streamB1", "pause_sync")
-            g.add_edge("streamB2", "pause_sync")
-            g.add_edge("streamB3", "pause_sync")
-            # check if we should stop
-            g.add_edge("pause_sync", "end")
-            g.add_edge("end", "pause")
-            g.add_edge("pause", "start")
-
-            return g
-```
-
-The new traffic model will only be used for measurements once OnionPerf is reinstalled.
-
-Note that custom code may be required to analyze the log files and visualize the data.
-
-### Analyze and Visualize Results
-
-OnionPerf runs the data it collects through `analyze` mode every night at midnight to
-produce the `onionperf.analysis.json` stats file. This file can be reproduced by using
-`onionperf analyze` mode and feeding in a TGen log file from the
-`onionperf-data/tgen-client/log_archive` directory and the matching Torctl log file from
-the `onionperf-data/tor-client/log_archive` directory.
-
-For example:
-
-```
-onionperf analyze --tgen onionperf-data/tgen-client/log_archive/onionperf_2015-11-15_15\:59\:59.tgen.log \
---torctl onionperf-data/tor-client/log_archive/onionperf_2015-11-15_15\:59\:59.torctl.log
-```
-
-This produces the `onionperf.analysis.json` file, which can then be plotted like so:
-
-```
-onionperf visualize --data onionperf.analysis.json "onionperf-test"
-```
-
-This will save new PDFs containing several graphs in the current directory. These include:
-
-#### TGen
-
-- Number of transfer AUTH errors, each client
-- Number of transfer PROXY errors, each client
-- Number of transfer AUTH errors, all clients over time
-- Number of transfer PROXY errors, all clients over time
-- Bytes transferred before AUTH error, all downloads
-- Bytes transferred before PROXY error, all downloads
-- Median bytes transferred before AUTH error, each client
-- Median bytes transferred before PROXY error, each client
-- Mean bytes transferred before AUTH error, each client
-- Mean bytes transferred before PROXY error, each client
-
-#### Tor
-
-- 60 second moving average throughput, read, all relays
-- 1 second throughput, read, all relays
-- 1 second throughput, read, each relay
-- 60 second moving average throughput, write, all relays
-- 1 second throughput, write, all relays
-- 1 second throughput, write, each relay
+The details of doing either of these two methods are not covered in this document.
 
 ### Troubleshooting
 
-While OnionPerf is running, it will log heartbeat status messages to indicate
-the health of the subprocesses. It also monitors these subprocesses with
-"watchdog threads" and restarts each subprocess if they fail. If more than 10
-failures happen within 60 minutes, then the watchdog will give up and exit,
-and at that point the heartbeat message should indicate that one of the
-subprocesses died.
+If anything goes wrong while doing measurements, OnionPerf typically informs the user in its console output. This is also the first place to look for investigating any issues.
 
-While running, a number of `Warning` messages might be logged. For example:
+The second place would be to check the log files in `~/onionperf-data/tgen-client/` or `~/onionperf-data/tor-client/`.
 
-```
-2016-12-21 12:15:17 1482318917.473774 [onionperf] [WARNING] command
-'/home/rob/shadow/src/plugin/shadow-plugin-tgen/build/tgen
-/home/rob/onionperf/onionperf-data/tgen-server/tgen.graphml.xml'
-finished before expected"
-```
+The most common configuration problems are probably related to firewall and port forwarding for doing direct (non onion-service) measurements. The specifics for setting up the firewall are out of scope for this document.
 
-This specific warning indicates that the tgen server watchdog thread detected
-that the tgen server prematurely exited. The watchdog should have spun
-up another tgen server to replace the one that died.
+Another class of common issues of long-running measurements is that one of the `tgen` or `tor` processes dies for reasons or hints (hopefully) to be found in their respective log files.
 
-To find out why this is happening you should check the specific component logs
-which are all subdirectories of the onionperf-data directory.
-In this particular case tgen-server log file revealed the problem:
+In order to avoid extended downtimes it is recommended to deploy monitoring tools that check whether measurement results produced by OnionPerf are fresh. The specifics are, again, out of scope for this document.
 
-```
-2016-12-20 18:46:29 1482255989.329712 [critical] [shd-tgen-server.c:94] [tgenserver_new] bind(): socket 5 returned -1 error 98: Address already in use
+## Analysis
+
+The next steps after performing measurements are to analyze and optionally visualize measurement results.
+
+### Analyzing measurement results
+
+While performing measurements, OnionPerf writes quite verbose log files to disk. The first step in the analysis is to parse these log files, extract key metrics, and write smaller and more structured measurement results to disk. This is done with OnionPerf's `analyze` mode.
+
+For example, the following command analyzes current log files of a running (or stopped) OnionPerf instance (as opposed to log-rotated, compressed files from previous days):
+
+```shell
+onionperf analyze --tgen ~/onionperf-data/tgen-client/onionperf.tgen.log --torctl ~/onionperf-data/tor-client/onionperf.torctl.log
 ```
 
-The log indicated that port 8080 was already in use by another process.
+The output analysis file is written to `onionperf.analysis.json.xz` in the current working directory. The file format is described in more detail in `README_JSON.md`.
 
-## Contribute
+The same analysis files are written automatically as part of ongoing measurements once per day at UTC midnight and can be found in `onionperf-data/htdocs/`.
 
-GitHub pull requests are welcome and encouraged!
+OnionPerf's `analyze` mode has several command-line parameters for customizing the analysis step:
+
+```shell
+onionperf analyze --help
+```
+
+### Visualizing measurement results
+
+Step two in the analysis is to process analysis files with OnionPerf's `visualize` mode which produces CSV and PDF files as output.
+
+For example, the analysis file produced above can be visualized with the following command, using "Test Measurements" as label for the data set:
+
+```shell
+onionperf visualize --data onionperf.analysis.json.xz "Test Measurements"
+```
+
+As a result, two files are written to the current working directory:
+
+- `onionperf.viz.$datetime.csv` contains visualized data in a CSV file format; and
+- `onionperf.viz.$datetime.pdf` contains visualizations in a PDF file format.
+
+Similar to the other modes, OnionPerf's `visualize` mode has command-line parameters for customizing the visualization step:
+
+```shell
+onionperf visualize --help
+```
+
+### Interpreting the PDF output format
+
+The PDF output file contains visualizations of the following metrics:
+
+- Time to download first (last) byte, which is defined as elapsed time between starting a measurement and receiving the first (last) byte of the HTTP response.
+- Throughput, which is computed from the elapsed time between receiving 0.5 and 1 MiB of the response.
+- Number of downloads.
+- Number and type of failures.
+
+### Interpreting the CSV output format
+
+The CSV output file contains the same data that is visualized in the PDF file. It contains the following columns:
+
+- `transfer_id` is the identifier used in the TGen client logs which may be useful to look up more details about a specific measurement.
+- `error_code`  is an optional error code if a measurement did not succeed.
+- `filesize_bytes` is the requested file size in bytes.
+- `label` is the data set label as given in the `--data/-d` parameter to the `visualize` mode.
+- `server` is set to either `onion` for onion service measurements or `public` for direct measurements.
+- `start` is the measurement start time.
+- `time_to_first_byte` is the time in seconds (with microsecond precision) to download the first byte.
+- `time_to_last_byte` is the time in seconds (with microsecond precision) to download the last byte.
+
+## Contributing
+
+The OnionPerf code is developed at https://gitlab.torproject.org/tpo/metrics/onionperf.
+
+Contributions to OnionPerf are welcome and encouraged!
+
