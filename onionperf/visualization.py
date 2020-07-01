@@ -58,7 +58,8 @@ class TGenVisualization(Visualization):
                     tgen_transfers = analysis.get_tgen_transfers(client)
                     for transfer_id, transfer_data in tgen_transfers.items():
                         transfer = {"transfer_id": transfer_id, "label": label,
-                                    "filesize_bytes": transfer_data["filesize_bytes"]}
+                                    "filesize_bytes": transfer_data["filesize_bytes"],
+                                    "error_code": None}
                         transfer["server"] = "onion" if ".onion:" in transfer_data["endpoint_remote"] else "public"
                         if "elapsed_seconds" in transfer_data:
                             s = transfer_data["elapsed_seconds"]
@@ -147,7 +148,7 @@ class TGenVisualization(Visualization):
 
     def __plot_errors_count(self):
         for server in self.data["server"].unique():
-            if "error_code" in self.data.columns and self.data[self.data["server"] == server]["error_code"].count() > 0:
+            if self.data[self.data["server"] == server]["error_code"].count() > 0:
                 self.__draw_countplot(x="error_code", hue="label", hue_name="Data set",
                                       data=self.data[self.data["server"] == server],
                                       xlabel="Error code", ylabel="Downloads failed (#)",
@@ -155,7 +156,7 @@ class TGenVisualization(Visualization):
 
     def __plot_errors_time(self):
         for server in self.data["server"].unique():
-            if "error_code" in self.data.columns and self.data[self.data["server"] == server]["error_code"].count() > 0:
+            if self.data[self.data["server"] == server]["error_code"].count() > 0:
                 self.__draw_stripplot(x="start", y="error_code", hue="label", hue_name="Data set",
                                      data=self.data[self.data["server"] == server],
                                      xlabel="Download start time", ylabel="Error code",
