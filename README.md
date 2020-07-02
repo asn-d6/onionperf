@@ -1,5 +1,6 @@
 # OnionPerf
- * [Overview](#overview)
+
+  * [Overview](#overview)
     + [What does OnionPerf do?](#what-does-onionperf-do-)
     + [What does OnionPerf *not* do?](#what-does-onionperf--not--do-)
   * [Installation](#installation)
@@ -18,6 +19,7 @@
     + [Visualizing measurement results](#visualizing-measurement-results)
     + [Interpreting the PDF output format](#interpreting-the-pdf-output-format)
     + [Interpreting the CSV output format](#interpreting-the-csv-output-format)
+    + [Visualizations on Tor Metrics](#visualizations-on-tor-metrics)
   * [Contributing](#contributing)
 
 ## Overview
