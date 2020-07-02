@@ -6,7 +6,7 @@ with open('requirements.txt') as f:
     install_requires = f.readlines()
 
 setup(name='OnionPerf',
-      version='0.3',
+      version='0.5',
       description='A utility to monitor, measure, analyze, and visualize the performance of Tor and Onion Services',
       author='Rob Jansen',
       url='https://github.com/robgjansen/onionperf/',
