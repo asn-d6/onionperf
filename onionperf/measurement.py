@@ -439,6 +439,9 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory 
 
         if not os.path.exists(tor_datadir): os.makedirs(tor_datadir)
         tor_config = self.create_tor_config(control_port,socks_port,tor_datadir,name)
+        tor_confpath = "{0}/torrc".format(tor_datadir)
+        with open(tor_confpath, 'wt') as f:
+            f.write(tor_config)
 
         tor_logpath = "{0}/onionperf.tor.log".format(tor_datadir)
         tor_writable = util.FileWritable(tor_logpath)
