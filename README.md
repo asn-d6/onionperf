@@ -36,15 +36,15 @@ OnionPerf does not interfere with how Tor selects paths and builds circuits, oth
 
 ## Installation
 
-OnionPerf has a couple dependencies in order to perform measurements or analyze and visualize measurement results. These dependencies include Tor, TGen (traffic generator), and a couple Python packages.
+OnionPerf has several dependencies in order to perform measurements or analyze and visualize measurement results. These dependencies include Tor, TGen (traffic generator), and a few Python packages.
 
 The following description was written with a Debian system in mind but should be transferable to other Linux distributions and possibly even other operating systems.
 
 ### Tor
 
-OnionPerf relies on the `tor` binary to start a Tor client on the client side and another one on the server side to host onion services.
+OnionPerf relies on the `tor` binary to start a Tor client process on the client side and a server side process to host onion services.
 
-The easiest way is to install the `tor` package, which puts the `tor` binary into the `PATH` where OnionPerf will find it. Optionally, systemd can be instructed to make sure that `tor` is never started as a service:
+The easiest way to satisfy this dependency is to install the `tor` package, which puts the `tor` binary into the `PATH` where OnionPerf will find it. Optionally, systemd can be instructed to make sure that `tor` is never started as a service:
 
 ```shell
 sudo apt install tor
@@ -88,7 +88,7 @@ The TGen binary will be contained in `~/tgen/build/tgen`, which is also the path
 
 OnionPerf is written in Python 3. The following instructions assume that a Python virtual environment is being used, even though installation is also possible without that.
 
-The virtual environment is being created, activated, and tested using:
+The virtual environment is created, activated, and tested using:
 
 ```shell
 sudo apt install python3-venv
@@ -100,14 +100,14 @@ which python3
 
 The last command should output something like `~/venv/bin/python3` as the path to the `python3` binary used in the virtual environment.
 
-In the next step, the OnionPerf repository is being cloned and requirements are being installed:
+The next step is to clone the OnionPerf repository and install its requirements:
 
 ```shell
 git clone https://git.torproject.org/onionperf.git
 pip3 install --no-cache -r onionperf/requirements.txt
 ```
 
-The next step after that is to install OnionPerf and print out the usage information to see if the installation was successful:
+The final step is to install OnionPerf and print out the usage information to see if the installation was successful:
 
 ```shell
 cd onionperf/
@@ -122,7 +122,7 @@ The virtual environment is deactivated with the following command:
 deactivate
 ```
 
-However, in order to perform measurements or doing analyses, the virtual environment needs to be activated first. This will ensure all the paths are found.
+However, in order to perform measurements or analyses, the virtual environment needs to be activated first. This will ensure all the paths are found.
 
 
 ## Measurement
@@ -133,7 +133,7 @@ Ideally, OnionPerf is run detached from the terminal session using tmux, systemd
 
 ### Starting and stopping measurements
 
-The most trivial configuration is to measure onion services only. In that case, OnionPerf is taking care of all configurations, and there are no firewall rules or port forwards to take care of.
+The most trivial configuration is to measure onion services only. In that case, OnionPerf runs without needing any additional configuration. For direct measurements via exit nodes, firewall rules or port forwarding may be required to allow inbound connections to the TGen server.
 
 Starting these measurements is as simple as:
 
