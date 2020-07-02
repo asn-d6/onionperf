@@ -42,7 +42,7 @@ The following description was written with a Debian system in mind but should be
 
 ### Tor
 
-OnionPerf relies on the `tor` binary to start a Tor client process on the client side and a server side process to host onion services.
+OnionPerf relies on the `tor` binary to start a Tor process on the client side to make client requests and another Tor process on the server side to host onion services.
 
 The easiest way to satisfy this dependency is to install the `tor` package, which puts the `tor` binary into the `PATH` where OnionPerf will find it. Optionally, systemd can be instructed to make sure that `tor` is never started as a service:
 
@@ -287,6 +287,12 @@ The CSV output file contains the same data that is visualized in the PDF file. I
 - `start` is the measurement start time.
 - `time_to_first_byte` is the time in seconds (with microsecond precision) to download the first byte.
 - `time_to_last_byte` is the time in seconds (with microsecond precision) to download the last byte.
+
+### Visualizations on Tor Metrics
+
+The analysis and visualization steps above can all be done by using the OnionPerf tool. In addition to that it's possible to visualize OnionPerf analysis files using other tools.
+
+For example, the [Tor Metrics website](https://metrics.torproject.org/torperf.html) contains various graphs based OnionPerf data.
 
 ## Contributing
 
