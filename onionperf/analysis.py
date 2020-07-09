@@ -26,7 +26,7 @@ class OPAnalysis(Analysis):
 
     def __init__(self, nickname=None, ip_address=None):
         super().__init__(nickname, ip_address)
-        self.json_db = {'type':'onionperf', 'version':'2.0', 'data':{}}
+        self.json_db = {'type' : 'onionperf', 'version' : '3.0', 'data' : {}}
         self.torctl_filepaths = []
 
     def add_torctl_file(self, filepath):
@@ -113,7 +113,7 @@ class OPAnalysis(Analysis):
         if 'type' not in db or 'version' not in db:
             logging.warning("'type' or 'version' not present in database")
             return None
-        elif db['type'] != 'onionperf' or str(db['version']) >= '3.':
+        elif db['type'] != 'onionperf' or str(db['version']) >= '4.':
             logging.warning("type or version not supported (type={0}, version={1})".format(db['type'], db['version']))
             return None
         else:
