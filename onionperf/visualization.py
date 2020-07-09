@@ -51,38 +51,36 @@ class TGenVisualization(Visualization):
             self.page.close()
 
     def __extract_data_frame(self):
-        transfers = []
+        streams = []
         for (analyses, label) in self.datasets:
             for analysis in analyses:
                 for client in analysis.get_nodes():
-                    tgen_transfers = analysis.get_tgen_transfers(client)
-                    for transfer_id, transfer_data in tgen_transfers.items():
-                        transfer = {"transfer_id": transfer_id, "label": label,
-                                    "filesize_bytes": transfer_data["filesize_bytes"],
-                                    "error_code": None}
-                        transfer["server"] = "onion" if ".onion:" in transfer_data["endpoint_remote"] else "public"
-                        if "elapsed_seconds" in transfer_data:
-                            s = transfer_data["elapsed_seconds"]
+                   tgen_streams = analysis.get_tgen_streams(client)
+                    for stream_id, stream_data in tgen_streams.items():
+                        stream = {"stream_id": stream_id, "label": label,
+                                    "filesize_bytes": stream_data["stream_info"]["recvsize"]}
+                        stream["server"] = "onion" if ".onion:" in stream_data["transport_info"]["remote"] else "public"
+                        if "time_info" in stream_data:
+                            s = stream_data["time_info"]
                             if "payload_progress" in s:
                                # Explanation of the math below for computing Mbps: From filesize_bytes
                                # and payload_progress fields we can compute the number of seconds that
                                # have elapsed between receiving bytes 524,288 and 1,048,576, which is a
                                # total amount of 524,288 bytes or 4,194,304 bits or 4.194304 megabits.
                                # We want the reciprocal of that value with unit megabits per second.
-                               if transfer_data["filesize_bytes"] == 1048576 and "1.0" in s["payload_progress"]:
-                                   transfer["mbps"] = 4.194304 / (s["payload_progress"]["1.0"] - s["payload_progress"]["0.5"])
-                               if transfer_data["filesize_bytes"] == 5242880 and "0.2" in s["payload_progress"]:
-                                   transfer["mbps"] = 4.194304 / (s["payload_progress"]["0.2"] - s["payload_progress"]["0.1"])
-                            if "first_byte" in s:
-                                transfer["time_to_first_byte"] = s["first_byte"]
-                            if "last_byte" in s:
-                                transfer["time_to_last_byte"] = s["last_byte"]
-                        if "error_code" in transfer_data and transfer_data["error_code"] != "NONE":
-                            transfer["error_code"] = transfer_data["error_code"]
-                        if "unix_ts_start" in transfer_data:
-                            transfer["start"] = datetime.datetime.utcfromtimestamp(transfer_data["unix_ts_start"])
-                        transfers.append(transfer)
-        self.data = pd.DataFrame.from_records(transfers, index="transfer_id")
+                               if stream_data["stream_info"]["recv_size"] == 5242880 and "0.2" in s["elapsed_seconds"]["payload_progress_recv"]:
+                                   stream["mbps"] = 4.194304 / (s["elapsed_seconds"]["payload_progress_recv"]["0.2"] - s["elapsed_seconds"]["payload_progress_recv"]["0.1"])
+
+                            if "usecs-to-first-byte-recv" in s:
+                                stream["time_to_first_byte"] = float(s["usecs-to-first-byte-recv"])/1000000
+                            if "usecs-to-last-byte-recv" in s:
+                                stream["time_to_last_byte"] = float(s["usecs-to-last-byte-recv"])/1000000
+                        if "error" in stream_data["transport_info"] and stream_data["transport_info"]["error"] != "NONE":
+                            stream["error_code"] = stream_data["transport_info"]["error"]
+                        if "unix_ts_start" in stream_data:
+                            stream["start"] = datetime.datetime.utcfromtimestamp(stream_data["unix_ts_start"])
+                        streams.append(stream)
+        self.data = pd.DataFrame.from_records(streams, index="stream_id")
 
     def __plot_firstbyte_ecdf(self):
         for server in self.data["server"].unique():
