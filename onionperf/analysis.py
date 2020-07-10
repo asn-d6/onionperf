@@ -65,8 +65,9 @@ class OPAnalysis(Analysis):
                     self.measurement_ip = "unknown"
 
                 self.json_db['data'].setdefault(self.nickname, {'measurement_ip' : self.measurement_ip}).setdefault(json_db_key, parser.get_data())
-                self.json_db['data'][self.nickname]["tgen"].pop("heartbeats")
-                self.json_db['data'][self.nickname]["tgen"].pop("init_ts")
+        self.json_db['data'][self.nickname]["tgen"].pop("heartbeats")
+        self.json_db['data'][self.nickname]["tgen"].pop("init_ts")
+        self.json_db['data'][self.nickname]["tgen"].pop("stream_summary")
         self.did_analysis = True
 
 
