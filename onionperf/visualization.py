@@ -68,7 +68,7 @@ class TGenVisualization(Visualization):
                                      stream["time_to_first_byte"] = float(s["usecs-to-first-byte-recv"])/1000000
                                  if "usecs-to-last-byte-recv" in s:
                                      stream["time_to_last_byte"] = float(s["usecs-to-last-byte-recv"])/1000000
-                             if "elapsed_seconds" in stream_data: 
+                             if "elapsed_seconds" in stream_data:
                                  s = stream_data["elapsed_seconds"]
                                  # Explanation of the math below for computing Mbps: From filesize_bytes
                                  # and payload_progress fields we can compute the number of seconds that
@@ -93,11 +93,11 @@ class TGenVisualization(Visualization):
                             if "elapsed_seconds" in transfer_data:
                                s = transfer_data["elapsed_seconds"]
                                if "payload_progress" in s:
-                               # Explanation of the math below for computing Mbps: From filesize_bytes
-                               # and payload_progress fields we can compute the number of seconds that
-                               # have elapsed between receiving bytes 524,288 and 1,048,576, which is a
-                               # total amount of 524,288 bytes or 4,194,304 bits or 4.194304 megabits.
-                               # We want the reciprocal of that value with unit megabits per second.
+                                   # Explanation of the math below for computing Mbps: From filesize_bytes
+                                   # and payload_progress fields we can compute the number of seconds that
+                                   # have elapsed between receiving bytes 524,288 and 1,048,576, which is a
+                                   # total amount of 524,288 bytes or 4,194,304 bits or 4.194304 megabits.
+                                   # We want the reciprocal of that value with unit megabits per second.
                                    if transfer_data["filesize_bytes"] == 1048576 and "1.0" in s["payload_progress"]:
                                        stream["mbps"] = 4.194304 / (s["payload_progress"]["1.0"] - s["payload_progress"]["0.5"])
                                    if transfer_data["filesize_bytes"] == 5242880 and "0.2" in s["payload_progress"]:

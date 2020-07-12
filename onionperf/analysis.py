@@ -26,7 +26,7 @@ class OPAnalysis(Analysis):
 
     def __init__(self, nickname=None, ip_address=None):
         super().__init__(nickname, ip_address)
-        self.json_db = {'type' : 'onionperf', 'version' : '3.0', 'data' : {}}
+        self.json_db = {'type': 'onionperf', 'version': '3.0', 'data': {}}
         self.torctl_filepaths = []
 
     def add_torctl_file(self, filepath):
@@ -64,7 +64,7 @@ class OPAnalysis(Analysis):
                 if self.measurement_ip is None:
                     self.measurement_ip = "unknown"
 
-                self.json_db['data'].setdefault(self.nickname, {'measurement_ip' : self.measurement_ip}).setdefault(json_db_key, parser.get_data())
+                self.json_db['data'].setdefault(self.nickname, {'measurement_ip': self.measurement_ip}).setdefault(json_db_key, parser.get_data())
         self.json_db['data'][self.nickname]["tgen"].pop("heartbeats")
         self.json_db['data'][self.nickname]["tgen"].pop("init_ts")
         self.json_db['data'][self.nickname]["tgen"].pop("stream_summary")
