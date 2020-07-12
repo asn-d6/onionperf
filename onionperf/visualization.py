@@ -59,7 +59,8 @@ class TGenVisualization(Visualization):
                          tgen_streams = analysis.get_tgen_streams(client)
                          for stream_id, stream_data in tgen_streams.items():
                              stream = {"id": stream_id, "label": label,
-                                         "filesize_bytes": int(stream_data["stream_info"]["recvsize"])}
+                                         "filesize_bytes": int(stream_data["stream_info"]["recvsize"]),
+                                         "error_code": None}
                              stream["server"] = "onion" if ".onion:" in stream_data["transport_info"]["remote"] else "public"
                              if "time_info" in stream_data:
                                  s = stream_data["time_info"]
@@ -86,7 +87,8 @@ class TGenVisualization(Visualization):
                         tgen_transfers = analysis.get_tgen_transfers(client)
                         for transfer_id, transfer_data in tgen_transfers.items():
                             stream = {"id": transfer_id, "label": label,
-                                        "filesize_bytes": transfer_data["filesize_bytes"]}
+                                        "filesize_bytes": transfer_data["filesize_bytes"],
+                                        "error_code": None}
                             stream["server"] = "onion" if ".onion:" in transfer_data["endpoint_remote"] else "public"
                             if "elapsed_seconds" in transfer_data:
                                s = transfer_data["elapsed_seconds"]
