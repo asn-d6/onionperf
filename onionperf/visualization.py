@@ -58,7 +58,7 @@ class TGenVisualization(Visualization):
                     for client in analysis.get_nodes():
                          tgen_streams = analysis.get_tgen_streams(client)
                          for stream_id, stream_data in tgen_streams.items():
-                             stream = {"stream_id": stream_id, "label": label,
+                             stream = {"id": stream_id, "label": label,
                                          "filesize_bytes": int(stream_data["stream_info"]["recvsize"])}
                              stream["server"] = "onion" if ".onion:" in stream_data["transport_info"]["remote"] else "public"
                              if "time_info" in stream_data:
@@ -85,7 +85,7 @@ class TGenVisualization(Visualization):
                     for client in analysis.get_nodes():
                         tgen_transfers = analysis.get_tgen_transfers(client)
                         for transfer_id, transfer_data in tgen_transfers.items():
-                            stream = {"stream_id": transfer_id, "label": label,
+                            stream = {"id": transfer_id, "label": label,
                                         "filesize_bytes": transfer_data["filesize_bytes"]}
                             stream["server"] = "onion" if ".onion:" in transfer_data["endpoint_remote"] else "public"
                             if "elapsed_seconds" in transfer_data:
@@ -110,7 +110,7 @@ class TGenVisualization(Visualization):
                                 stream["start"] = datetime.datetime.utcfromtimestamp(transfer_data["unix_ts_start"])
                             streams.append(stream)
 
-        self.data = pd.DataFrame.from_records(streams, index="stream_id")
+        self.data = pd.DataFrame.from_records(streams, index="id")
 
     def __plot_firstbyte_ecdf(self):
         for server in self.data["server"].unique():
