@@ -4,11 +4,8 @@
   See LICENSE for licensing information
 '''
 
-import sys, os, re, json, datetime, logging
+import os, re, json, datetime, logging
 
-from multiprocessing import Pool, cpu_count
-from signal import signal, SIGINT, SIG_IGN
-from socket import gethostname
 from abc import ABCMeta, abstractmethod
 
 # stem imports
