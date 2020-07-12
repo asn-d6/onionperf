@@ -83,7 +83,7 @@ cmake ..
 make
 ```
 
-The TGen binary will be contained in `~/tgen/build/tgen`, which is also the path that needs to be passed to OnionPerf's `--tgen` parameter when doing measurements.
+The TGen binary will be contained in `~/tgen/build/src/tgen`, which is also the path that needs to be passed to OnionPerf's `--tgen` parameter when doing measurements.
 
 ### OnionPerf
 
