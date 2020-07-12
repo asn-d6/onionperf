@@ -77,7 +77,6 @@ sudo apt install cmake libglib2.0-dev libigraph0-dev make
 cd ~/
 git clone https://github.com/shadow/tgen.git
 cd tgen/
-git checkout -b v0.0.1 v0.0.1
 mkdir build
 cd build/
 cmake ..
@@ -281,7 +280,7 @@ The PDF output file contains visualizations of the following metrics:
 
 The CSV output file contains the same data that is visualized in the PDF file. It contains the following columns:
 
-- `transfer_id` is the identifier used in the TGen client logs which may be useful to look up more details about a specific measurement.
+- `id` is the identifier used in the TGen client logs which may be useful to look up more details about a specific measurement.
 - `error_code`  is an optional error code if a measurement did not succeed.
 - `filesize_bytes` is the requested file size in bytes.
 - `label` is the data set label as given in the `--data/-d` parameter to the `visualize` mode.
