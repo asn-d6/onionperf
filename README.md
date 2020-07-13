@@ -70,7 +70,7 @@ In this case the resulting `tor` binary can be found in `~/tor/src/app/tor` and 
 
 ### TGen
 
-OnionPerf uses TGen to generate traffic on client and server side for its measurements. Installing dependencies, cloning TGen to a subdirectory in the user's home directory, checking out version 0.0.1, and building TGen is done as follows:
+OnionPerf uses TGen to generate traffic on client and server side for its measurements. Installing dependencies, cloning TGen to a subdirectory in the user's home directory, and building TGen is done as follows:
 
 ```shell
 sudo apt install cmake libglib2.0-dev libigraph0-dev make
