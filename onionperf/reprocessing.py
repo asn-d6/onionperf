@@ -1,4 +1,4 @@
-from onionperf.analysis import Analysis
+from onionperf.analysis import OPAnalysis
 from onionperf import util
 from functools import partial
 from multiprocessing import Pool, cpu_count
@@ -47,7 +47,7 @@ def match(tgen_logs, tor_logs, date_filter):
 
 
 def analyze_func(prefix, nick, do_complete, pair):
-    analysis = Analysis(nickname=nick)
+    analysis = OPAnalysis(nickname=nick)
     logging.info('Analysing pair for date {0}'.format(pair[2]))
     analysis.add_tgen_file(pair[0])
     analysis.add_torctl_file(pair[1])
