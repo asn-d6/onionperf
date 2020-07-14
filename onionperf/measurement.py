@@ -150,7 +150,7 @@ def logrotate_thread_task(writables, tgen_writable, torctl_writable, docroot, ni
                     public_measurement_ip_guess = util.get_ip_address()
 
                     # set up the analysis object with our log files
-                    anal = analysis.Analysis(nickname=nickname, ip_address=public_measurement_ip_guess)
+                    anal = analysis.OPAnalysis(nickname=nickname, ip_address=public_measurement_ip_guess)
                     if tgen_writable is not None:
                         anal.add_tgen_file(tgen_writable.rotate_file(filename_datetime=next_midnight))
                     if torctl_writable is not None:
