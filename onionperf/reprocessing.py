@@ -46,21 +46,21 @@ def match(tgen_logs, tor_logs, date_filter):
     return log_pairs
 
 
-def analyze_func(prefix, nick, do_complete, pair):
+def analyze_func(prefix, nick, pair):
     analysis = OPAnalysis(nickname=nick)
     logging.info('Analysing pair for date {0}'.format(pair[2]))
     analysis.add_tgen_file(pair[0])
     analysis.add_torctl_file(pair[1])
-    analysis.analyze(do_complete=do_complete, date_filter=pair[2])
+    analysis.analyze(date_filter=pair[2])
     analysis.save(output_prefix=prefix)
     return 1
 
 
-def multiprocess_logs(log_pairs, prefix, nick=None, do_complete=False):
+def multiprocess_logs(log_pairs, prefix, nick=None):
     pool = Pool(cpu_count())
     analyses = None
     try:
-        func = partial(analyze_func, prefix, nick, do_complete)
+        func = partial(analyze_func, prefix, nick)
         mr = pool.map_async(func, log_pairs)
         pool.close()
         while not mr.ready():

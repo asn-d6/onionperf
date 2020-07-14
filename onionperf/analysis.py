@@ -29,13 +29,7 @@ class OPAnalysis(Analysis):
     def add_torctl_file(self, filepath):
         self.torctl_filepaths.append(filepath)
 
-    def get_tor_bandwidth_summary(self, node, direction):
-        try:
-            return self.json_db['data'][node]['tor']['bandwidth_summary'][direction]
-        except:
-            return None
-
-    def analyze(self, do_complete=False, date_filter=None):
+    def analyze(self, date_filter=None):
         if self.did_analysis:
             return
 
@@ -47,7 +41,7 @@ class OPAnalysis(Analysis):
             if len(filepaths) > 0:
                 for filepath in filepaths:
                     logging.info("parsing log file at {0}".format(filepath))
-                    parser.parse(util.DataSource(filepath), do_complete=do_complete)
+                    parser.parse(util.DataSource(filepath), do_complete=True)
 
                 if self.nickname is None:
                     parsed_name = parser.get_name()
@@ -134,7 +128,7 @@ class OPAnalysis(Analysis):
 
 class Parser(object, metaclass=ABCMeta):
     @abstractmethod
-    def parse(self, source, do_complete):
+    def parse(self, source, do_complete=True):
         pass
     @abstractmethod
     def get_data(self):
@@ -270,14 +264,10 @@ class TorCtlParser(Parser):
 
     def __init__(self, date_filter=None):
         ''' date_filter should be given in UTC '''
-        self.do_complete = False
-        self.bandwidth_summary = {'bytes_read':{}, 'bytes_written':{}}
         self.circuits_state = {}
         self.circuits = {}
-        self.circuits_summary = {'buildtimes':[], 'lifetimes':[]}
         self.streams_state = {}
         self.streams = {}
-        self.streams_summary = {'lifetimes':{}}
         self.name = None
         self.boot_succeeded = False
         self.build_timeout_last = None
@@ -320,15 +310,10 @@ class TorCtlParser(Parser):
 
                 data = circ.get_data()
                 if data is not None:
-                    if built is not None and started is not None and len(data['path']) == 3:
-                        self.circuits_summary['buildtimes'].append(built - started)
-                    if ended is not None and started is not None:
-                        self.circuits_summary['lifetimes'].append(ended - started)
-                    if self.do_complete:
-                        self.circuits[cid] = data
+                    self.circuits[cid] = data
                 self.circuits_state.pop(cid)
 
-        elif self.do_complete and isinstance(event, CircMinorEvent):
+        elif isinstance(event, CircMinorEvent):
             if event.purpose != event.old_purpose or event.event != CircEvent.PURPOSE_CHANGED:
                 key = "{0}:{1}".format(event.event, event.purpose)
                 circ.add_event(key, arrival_dt)
@@ -364,14 +349,8 @@ class TorCtlParser(Parser):
 
             data = strm.get_data()
             if data is not None:
-                if self.do_complete:
-                    self.streams[sid] = data
-                self.streams_summary['lifetimes'].setdefault(stream_type, []).append(ended - started)
+                self.streams[sid] = data
             self.streams_state.pop(sid)
-
-    def __handle_bw(self, event, arrival_dt):
-        self.bandwidth_summary['bytes_read'][int(arrival_dt)] = event.read
-        self.bandwidth_summary['bytes_written'][int(arrival_dt)] = event.written
 
     def __handle_buildtimeout(self, event, arrival_dt):
         self.build_timeout_last = event.timeout
@@ -382,8 +361,6 @@ class TorCtlParser(Parser):
             self.__handle_circuit(event, arrival_dt)
         elif isinstance(event, StreamEvent):
             self.__handle_stream(event, arrival_dt)
-        elif isinstance(event, BandwidthEvent):
-            self.__handle_bw(event, arrival_dt)
         elif isinstance(event, BuildTimeoutSetEvent):
             self.__handle_buildtimeout(event, arrival_dt)
 
@@ -408,27 +385,26 @@ class TorCtlParser(Parser):
             elif re.search("BOOTSTRAP", line) is not None and re.search("PROGRESS=100", line) is not None:
                 self.boot_succeeded = True
 
-        if self.do_complete or (self.do_complete is False and re.search("650\sBW", line) is not None):
-            # parse with stem
-            timestamps, sep, raw_event_str = line.partition(" 650 ")
-            if sep == '':
-                return True
+        # parse with stem
+        timestamps, sep, raw_event_str = line.partition(" 650 ")
+        if sep == '':
+            return True
 
-            # event.arrived_at is also available but at worse granularity
-            unix_ts = float(timestamps.strip().split()[2])
+        # event.arrived_at is also available but at worse granularity
+        unix_ts = float(timestamps.strip().split()[2])
 
-            # check if we should ignore the line
-            line_date = datetime.datetime.utcfromtimestamp(unix_ts).date()
-            if not self.__is_date_valid(line_date):
-                return True
+        # check if we should ignore the line
+        line_date = datetime.datetime.utcfromtimestamp(unix_ts).date()
+        if not self.__is_date_valid(line_date):
+            return True
 
-            event = ControlMessage.from_str("{0} {1}".format(sep.strip(), raw_event_str))
-            convert('EVENT', event)
-            self.__handle_event(event, unix_ts)
+        event = ControlMessage.from_str("{0} {1}".format(sep.strip(), raw_event_str))
+        convert('EVENT', event)
+        self.__handle_event(event, unix_ts)
+
         return True
 
-    def parse(self, source, do_complete=False):
-        self.do_complete = do_complete
+    def parse(self, source, do_complete=True):
         source.open(newline='\r\n')
         for line in source:
             # ignore line parsing errors
@@ -442,9 +418,7 @@ class TorCtlParser(Parser):
         source.close()
 
     def get_data(self):
-        return {'circuits': self.circuits, 'circuits_summary': self.circuits_summary,
-                'streams':self.streams, 'streams_summary': self.streams_summary,
-                'bandwidth_summary': self.bandwidth_summary}
+        return {'circuits': self.circuits, 'streams': self.streams}
 
     def get_name(self):
         return self.name

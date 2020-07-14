@@ -61,7 +61,7 @@ def test_log_match_with_wrong_filter_date():
 def test_analyze_func_json():
     pair = (DATA_DIR + 'logs/onionperf_2019-01-10_23:59:59.tgen.log', DATA_DIR + 'logs/onionperf_2019-01-10_23:59:59.torctl.log', datetime.datetime(2019, 1, 10, 0, 0))
     work_dir = tempfile.mkdtemp()
-    reprocessing.analyze_func(work_dir, None, False, pair)
+    reprocessing.analyze_func(work_dir, None, pair)
     json_file = os.path.join(work_dir, "2019-01-10.onionperf.analysis.json.xz")
     assert(os.path.exists(json_file))
     shutil.rmtree(work_dir)
