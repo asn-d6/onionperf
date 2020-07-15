@@ -10,7 +10,7 @@ from abc import ABCMeta, abstractmethod
 
 # stem imports
 from stem import CircEvent, CircStatus, CircPurpose, StreamStatus
-from stem.response.events import CircuitEvent, CircMinorEvent, StreamEvent, BandwidthEvent, BuildTimeoutSetEvent
+from stem.response.events import CircuitEvent, CircMinorEvent, StreamEvent, BuildTimeoutSetEvent
 from stem.response import ControlMessage, convert
 
 # tgentools imports
@@ -34,14 +34,14 @@ class OPAnalysis(Analysis):
             return
 
         self.date_filter = date_filter
-        tgen_parser = TGenParser(date_filter=self.date_filter)
+        super().analyze(do_complete=True)
         torctl_parser = TorCtlParser(date_filter=self.date_filter)
 
-        for (filepaths, parser, json_db_key) in [(self.tgen_filepaths, tgen_parser, 'tgen'), (self.torctl_filepaths, torctl_parser, 'tor')]:
+        for (filepaths, parser, json_db_key) in [(self.torctl_filepaths, torctl_parser, 'tor')]:
             if len(filepaths) > 0:
                 for filepath in filepaths:
                     logging.info("parsing log file at {0}".format(filepath))
-                    parser.parse(util.DataSource(filepath), do_complete=True)
+                    parser.parse(util.DataSource(filepath))
 
                 if self.nickname is None:
                     parsed_name = parser.get_name()
@@ -128,7 +128,7 @@ class OPAnalysis(Analysis):
 
 class Parser(object, metaclass=ABCMeta):
     @abstractmethod
-    def parse(self, source, do_complete=True):
+    def parse(self, source):
         pass
     @abstractmethod
     def get_data(self):
@@ -404,7 +404,7 @@ class TorCtlParser(Parser):
 
         return True
 
-    def parse(self, source, do_complete=True):
+    def parse(self, source):
         source.open(newline='\r\n')
         for line in source:
             # ignore line parsing errors
