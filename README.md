@@ -236,7 +236,7 @@ For example, the following command analyzes current log files of a running (or s
 onionperf analyze --tgen ~/onionperf-data/tgen-client/onionperf.tgen.log --torctl ~/onionperf-data/tor-client/onionperf.torctl.log
 ```
 
-The output analysis file is written to `onionperf.analysis.json.xz` in the current working directory. The file format is described in more detail in `README_JSON.md`.
+The output analysis file is written to `onionperf.analysis.json.xz` in the current working directory. The file format is described in more detail in `schema/onionperf-3.0.json`.
 
 The same analysis files are written automatically as part of ongoing measurements once per day at UTC midnight and can be found in `onionperf-data/htdocs/`.
 
