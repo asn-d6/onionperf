@@ -54,50 +54,57 @@ class TGenVisualization(Visualization):
         streams = []
         for (analyses, label) in self.datasets:
             for analysis in analyses:
-                if analysis.json_db['version'] >= '3':
-                    for client in analysis.get_nodes():
-                         tgen_streams = analysis.get_tgen_streams(client)
-                         for stream_id, stream_data in tgen_streams.items():
-                             stream = {"id": stream_id, "label": label,
-                                         "filesize_bytes": int(stream_data["stream_info"]["recvsize"]),
-                                         "error_code": None}
-                             stream["server"] = "onion" if ".onion:" in stream_data["transport_info"]["remote"] else "public"
-                             if "time_info" in stream_data:
-                                 s = stream_data["time_info"]
-                                 if "usecs-to-first-byte-recv" in s:
-                                     stream["time_to_first_byte"] = float(s["usecs-to-first-byte-recv"])/1000000
-                                 if "usecs-to-last-byte-recv" in s:
-                                     stream["time_to_last_byte"] = float(s["usecs-to-last-byte-recv"])/1000000
-                             if "elapsed_seconds" in stream_data:
-                                 s = stream_data["elapsed_seconds"]
-                                 # Explanation of the math below for computing Mbps: From stream_info/recvsize
-                                 # and payload_progress_recv fields we can compute the number of seconds that
-                                 # have elapsed between receiving bytes 524,288 and 1,048,576, which is a
-                                 # total amount of 524,288 bytes or 4,194,304 bits or 4.194304 megabits.
-                                 # We want the reciprocal of that value with unit megabits per second.
-                                 if stream_data["stream_info"]["recvsize"] == "5242880" and "0.2" in s["payload_progress_recv"]:
-                                      stream["mbps"] = 4.194304 / (s["payload_progress_recv"]["0.2"] - s["payload_progress_recv"]["0.1"])
-                             if "error" in stream_data["transport_info"] and stream_data["transport_info"]["error"] != "NONE":
-                                 stream["error_code"] = stream_data["transport_info"]["error"]
-                             if "unix_ts_start" in stream_data:
-                                 stream["start"] = datetime.datetime.utcfromtimestamp(stream_data["unix_ts_start"])
-                             streams.append(stream)
-                else:
-                    for client in analysis.get_nodes():
-                        tgen_transfers = analysis.get_tgen_transfers(client)
-                        for transfer_id, transfer_data in tgen_transfers.items():
+                for client in analysis.get_nodes():
+                    tor_streams_by_source_port = {}
+                    tor_streams = analysis.get_tor_streams(client)
+                    for tor_stream in tor_streams.values():
+                        if "source" in tor_stream and ":" in tor_stream["source"]:
+                            source_port = tor_stream["source"].split(":")[1]
+                            tor_streams_by_source_port.setdefault(source_port, []).append(tor_stream)
+                    tgen_streams = analysis.get_tgen_streams(client)
+                    tgen_transfers = analysis.get_tgen_transfers(client)
+                    while tgen_streams or tgen_transfers:
+                        error_code = None
+                        source_port = None
+                        unix_ts_end = None
+                        # Explanation of the math below for computing Mbps: For 1 MiB and 5 MiB
+                        # downloads we can extract the number of seconds that have elapsed between
+                        # receiving bytes 524,288 and 1,048,576, which is a total amount of 524,288
+                        # bytes or 4,194,304 bits or 4.194304 megabits. We want the reciprocal of
+                        # that value with unit megabits per second.
+                        if tgen_streams:
+                            stream_id, stream_data = tgen_streams.popitem()
+                            stream = {"id": stream_id, "label": label,
+                                      "filesize_bytes": int(stream_data["stream_info"]["recvsize"]),
+                                      "error_code": None}
+                            stream["server"] = "onion" if ".onion:" in stream_data["transport_info"]["remote"] else "public"
+                            if "time_info" in stream_data:
+                                s = stream_data["time_info"]
+                                if "usecs-to-first-byte-recv" in s:
+                                    stream["time_to_first_byte"] = float(s["usecs-to-first-byte-recv"])/1000000
+                                if "usecs-to-last-byte-recv" in s:
+                                    stream["time_to_last_byte"] = float(s["usecs-to-last-byte-recv"])/1000000
+                            if "elapsed_seconds" in stream_data:
+                                s = stream_data["elapsed_seconds"]
+                                if stream_data["stream_info"]["recvsize"] == "5242880" and "0.2" in s["payload_progress_recv"]:
+                                     stream["mbps"] = 4.194304 / (s["payload_progress_recv"]["0.2"] - s["payload_progress_recv"]["0.1"])
+                            if "error" in stream_data["transport_info"] and stream_data["transport_info"]["error"] != "NONE":
+                                error_code = stream_data["transport_info"]["error"]
+                            if "local" in stream_data["transport_info"] and len(stream_data["transport_info"]["local"].split(":")) > 2:
+                                source_port = stream_data["transport_info"]["local"].split(":")[2]
+                            if "unix_ts_end" in stream_data:
+                                unix_ts_end = stream_data["unix_ts_end"]
+                            if "unix_ts_start" in stream_data:
+                                stream["start"] = datetime.datetime.utcfromtimestamp(stream_data["unix_ts_start"])
+                        elif tgen_transfers:
+                            transfer_id, transfer_data = tgen_transfers.popitem()
                             stream = {"id": transfer_id, "label": label,
-                                        "filesize_bytes": transfer_data["filesize_bytes"],
-                                        "error_code": None}
+                                      "filesize_bytes": transfer_data["filesize_bytes"],
+                                      "error_code": None}
                             stream["server"] = "onion" if ".onion:" in transfer_data["endpoint_remote"] else "public"
                             if "elapsed_seconds" in transfer_data:
                                s = transfer_data["elapsed_seconds"]
                                if "payload_progress" in s:
-                                   # Explanation of the math below for computing Mbps: From filesize_bytes
-                                   # and payload_progress fields we can compute the number of seconds that
-                                   # have elapsed between receiving bytes 524,288 and 1,048,576, which is a
-                                   # total amount of 524,288 bytes or 4,194,304 bits or 4.194304 megabits.
-                                   # We want the reciprocal of that value with unit megabits per second.
                                    if transfer_data["filesize_bytes"] == 1048576 and "1.0" in s["payload_progress"]:
                                        stream["mbps"] = 4.194304 / (s["payload_progress"]["1.0"] - s["payload_progress"]["0.5"])
                                    if transfer_data["filesize_bytes"] == 5242880 and "0.2" in s["payload_progress"]:
@@ -107,11 +114,27 @@ class TGenVisualization(Visualization):
                                if "last_byte" in s:
                                    stream["time_to_last_byte"] = s["last_byte"]
                             if "error_code" in transfer_data and transfer_data["error_code"] != "NONE":
-                                stream["error_code"] = transfer_data["error_code"]
+                                error_code = transfer_data["error_code"]
+                            if "endpoint_local" in transfer_data and len(transfer_data["endpoint_local"].split(":")) > 2:
+                                source_port = transfer_data["endpoint_local"].split(":")[2]
+                            if "unix_ts_end" in transfer_data:
+                                unix_ts_end = transfer_data["unix_ts_end"]
                             if "unix_ts_start" in transfer_data:
                                 stream["start"] = datetime.datetime.utcfromtimestamp(transfer_data["unix_ts_start"])
-                            streams.append(stream)
-
+                        if error_code:
+                            if error_code == "PROXY":
+                                error_code_parts = ["TOR"]
+                            else:
+                                error_code_parts = ["TGEN", error_code]
+                            if source_port and unix_ts_end:
+                                for tor_stream in tor_streams_by_source_port[source_port]:
+                                    if abs(unix_ts_end - tor_stream["unix_ts_end"]) < 150.0:
+                                        if "failure_reason_local" in tor_stream:
+                                            error_code_parts.append(tor_stream["failure_reason_local"])
+                                            if "failure_reason_remote" in tor_stream:
+                                                error_code_parts.append(tor_stream["failure_reason_remote"])
+                            stream["error_code"] = "/".join(error_code_parts)
+                        streams.append(stream)
         self.data = pd.DataFrame.from_records(streams, index="id")
 
     def __plot_firstbyte_ecdf(self):
