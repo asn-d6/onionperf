@@ -34,7 +34,7 @@ class OPAnalysis(Analysis):
             return
 
         self.date_filter = date_filter
-        super().analyze(do_complete=True)
+        super().analyze(do_complete=True, date_filter=self.date_filter)
         torctl_parser = TorCtlParser(date_filter=self.date_filter)
 
         for (filepaths, parser, json_db_key) in [(self.torctl_filepaths, torctl_parser, 'tor')]:
