@@ -88,8 +88,8 @@ class TGenVisualization(Visualization):
                                 s = stream_data["elapsed_seconds"]
                                 if stream_data["stream_info"]["recvsize"] == "5242880" and "0.2" in s["payload_progress_recv"]:
                                      stream["mbps"] = 4.194304 / (s["payload_progress_recv"]["0.2"] - s["payload_progress_recv"]["0.1"])
-                            if "error" in stream_data["transport_info"] and stream_data["transport_info"]["error"] != "NONE":
-                                error_code = stream_data["transport_info"]["error"]
+                            if "error" in stream_data["stream_info"] and stream_data["stream_info"]["error"] != "NONE":
+                                error_code = stream_data["stream_info"]["error"]
                             if "local" in stream_data["transport_info"] and len(stream_data["transport_info"]["local"].split(":")) > 2:
                                 source_port = stream_data["transport_info"]["local"].split(":")[2]
                             if "unix_ts_end" in stream_data:
