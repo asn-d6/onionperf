@@ -1,8 +1,8 @@
-/.onionperf/*
 onionperf-data
+onionperf-private
 venv
 *.json.xz
 *.pdf
+*.csv
 *.pyc
-onionperf/docs/_build
 .coverage

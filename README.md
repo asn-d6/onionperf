@@ -125,6 +125,12 @@ deactivate
 
 However, in order to perform measurements or analyses, the virtual environment needs to be activated first. This will ensure all the paths are found.
 
+If needed, unit tests are run with the following command:
+
+```shell
+cd ~/onionperf/
+python3 -m nose --with-coverage --cover-package=onionperf
+```
 
 ## Measurement
 
