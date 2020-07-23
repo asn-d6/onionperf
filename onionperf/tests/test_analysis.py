@@ -48,7 +48,7 @@ def test_stream_complete_event_init():
     assert_equals(complete.time_info['usecs-to-proxy-choice'], '348')
     assert_equals(complete.time_info['usecs-to-socket-connect'], '210')
     assert_equals(complete.time_info['usecs-to-socket-create'], '11')
-    assert_equals(complete.unix_ts_start, 1555940480.6472511)
+    assert_equals(complete.unix_ts_start, 1555940359.2286081)
 
 
 def test_stream_error_event():
@@ -146,7 +146,7 @@ def test_stream_object_end_to_end():
                 'now-ts': '5948446579043'
             },
             'stream_id': '4:12:localhost:127.0.0.1:46878:dc34og3c3aqdqntblnxkstzfvh7iy7llojd4fi5j23y2po32ock2k7ad.onion:0.0.0.0:8080',
-            'unix_ts_start': 1555940480.6472511
+            'unix_ts_start': 1555940359.2286081
         })
 
 def test_parsing_parse_error():
