@@ -292,6 +292,7 @@ class TGenVisualization(Visualization):
         g.set(title=title, xlabel=xlabel, ylabel=ylabel,
               xlim=(xmin - 0.03 * (xmax - xmin), xmax + 0.03 * (xmax - xmin)))
         plt.xticks(rotation=10)
+        plt.yticks(rotation=80)
         sns.despine()
         self.page.savefig()
         plt.close()
