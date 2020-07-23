@@ -97,6 +97,12 @@ class OPAnalysis(Analysis):
         except:
             return None
 
+    def get_tor_streams(self, node):
+        try:
+            return self.json_db['data'][node]['tor']['streams']
+        except:
+            return None
+
     @classmethod
     def load(cls, filename="onionperf.analysis.json.xz", input_prefix=os.getcwd()):
         filepath = os.path.abspath(os.path.expanduser("{0}".format(filename)))
