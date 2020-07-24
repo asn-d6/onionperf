@@ -6,6 +6,10 @@
    `onionperf analyze -s/--do-simple-parse` switch. Implements #40005.
  - Add JSON schema for analysis results file format 3.0. Implements
    #40003.
+ - Correctly compute the start time of failed streams as part of the
+   update to TGen and TGenTools 1.0.0. Fixes #30362.
+ - Refine error codes shown in visualizations into TOR or TGEN errors.
+   Implements #34218.
 
 # Changes in version 0.5 - 2020-07-02
 
