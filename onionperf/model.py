@@ -118,7 +118,8 @@ class TorperfModel(GeneratableTGenModel):
                 if i > 0:
                     g.add_edge("pause-%d" % (i-1), "stream-%d" % i)
 
-            g.add_node("end")
+            g.add_node("end",
+                       count=str(self.config.num_transfers))
             g.add_edge("pause", "stream-0")
             g.add_edge("pause-%d" % (self.config.num_transfers - 1), "end")
 

@@ -50,10 +50,11 @@ def readline_thread_task(instream, q):
     # wait for lines from stdout until the EOF
     for line in iter(instream.readline, b''): q.put(line)
 
-def watchdog_thread_task(cmd, cwd, writable, done_ev, send_stdin, ready_search_str, ready_ev):
+def watchdog_thread_task(cmd, cwd, writable, done_ev, send_stdin, ready_search_str, ready_ev, no_relaunch):
 
-    # launch or re-launch our sub process until we are told to stop
-    # if we fail too many times in too short of time, give up and exit
+    # launch or re-launch (or don't re-launch, if no_relaunch is set) our sub
+    # process until we are told to stop if we fail too many times in too short
+    # of time, give up and exit
     failure_times = []
     pause_time_seconds = 0
     while done_ev.is_set() is False:
@@ -105,6 +106,10 @@ def watchdog_thread_task(cmd, cwd, writable, done_ev, send_stdin, ready_search_s
             subp.wait()
         elif done_ev.is_set():
             logging.info("command '{}' finished as expected".format(cmd))
+        elif no_relaunch:
+            logging.info("command '{}' finished on its own".format(cmd))
+            # our command finished on its own. time to terminate.
+            done_ev.set()
         else:
             logging.warning("command '{}' finished before expected".format(cmd))
             now = time.time()
@@ -284,15 +289,9 @@ class Measurement(object):
                 time.sleep(1)
                 while True:
                     if tgen_model.num_transfers:
-                        downloads = 0
-                        while True:
-                            downloads = self.__get_download_count(tgen_client_writable.filename)
-                            time.sleep(1)
-                            if downloads >= tgen_model.num_transfers:
-                                logging.info("Onionperf has downloaded %d files and will now shut down." % tgen_model.num_transfers)
-                                break
-                        else:
-                            continue
+                        # This function blocks until our TGen client process
+                        # terminated on its own.
+                        self.__wait_for_tgen_client()
                         break
 
                     if self.__is_alive():
@@ -366,7 +365,10 @@ class Measurement(object):
         logging.info("Logging TGen {1} process output to {0}".format(tgen_logpath, name))
 
         tgen_cmd = "{0} {1}".format(self.tgen_bin_path, tgen_confpath)
-        tgen_args = (tgen_cmd, tgen_datadir, tgen_writable, self.done_event, None, None, None)
+        # If we're running in "one-shot mode", TGen client will terminate on
+        # its own and we don't need our watchdog to restart the process.
+        no_relaunch = (name == "client" and tgen_model_conf.num_transfers)
+        tgen_args = (tgen_cmd, tgen_datadir, tgen_writable, self.done_event, None, None, None, no_relaunch)
         tgen_watchdog = threading.Thread(target=watchdog_thread_task, name="tgen_{0}_watchdog".format(name), args=tgen_args)
         tgen_watchdog.start()
         self.threads.append(tgen_watchdog)
@@ -464,7 +466,7 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory 
         tor_stdin_bytes = str_tools._to_bytes(tor_config)
         tor_ready_str = "Bootstrapped 100"
         tor_ready_ev = threading.Event()
-        tor_args = (tor_cmd, tor_datadir, tor_writable, self.done_event, tor_stdin_bytes, tor_ready_str, tor_ready_ev)
+        tor_args = (tor_cmd, tor_datadir, tor_writable, self.done_event, tor_stdin_bytes, tor_ready_str, tor_ready_ev, False)
         tor_watchdog = threading.Thread(target=watchdog_thread_task, name="tor_{0}_watchdog".format(name), args=tor_args)
         tor_watchdog.start()
         self.threads.append(tor_watchdog)
@@ -491,14 +493,13 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory 
 
         return tor_writable, torctl_writable
 
-    def __get_download_count(self, tgen_logpath):
-        count = 0
-        if tgen_logpath is not None and os.path.exists(tgen_logpath):
-            with open(tgen_logpath, 'r') as fin:
-                for line in fin:
-                    if re.search("transfer-complete", line) is not None:
-                        count += 1
-        return count
+    def __wait_for_tgen_client(self):
+        logging.info("Waiting for TGen client to finish.")
+        for t in self.threads:
+            if t.getName() == "tgen_client_watchdog":
+                while t.is_alive():
+                    time.sleep(1)
+                logging.info("TGen client finished.")
 
     def __is_alive(self):
         all_alive = True
