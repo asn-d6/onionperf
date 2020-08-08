@@ -1,4 +1,4 @@
-# Changes in version 0.6 - 2020-??-??
+# Changes in version 0.6 - 2020-08-08
 
  - Update to TGen 1.0.0, use TGenTools for parsing TGen log files, and
    update analysis results file version to 3.0. Implements #33974.
