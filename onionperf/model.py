@@ -118,7 +118,7 @@ class TorperfModel(GeneratableTGenModel):
         else:
             # one-shot mode, i.e., end after configured number of transfers
             g.add_node("end",
-                       count=str(self.config.num_transfers))
+                       count="%d" % self.config.num_transfers)
             # check for end condition after every transfer
             g.add_edge("stream", "end")
             # if end condition not met, pause
