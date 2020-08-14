@@ -43,14 +43,14 @@ class TGenLoadableModel(TGenModel):
 
 class TGenModelConf(object):
     """Represents a TGen traffic model configuration."""
-    def __init__(self, initial_pause=0, num_transfers=1, transfer_size="5 MiB",
-                 continuous_transfers=False, inter_transfer_pause=5, port=None, servers=[],
+    def __init__(self, pause_initial=0, num_transfers=1, transfer_size="5 MiB",
+                 continuous_transfers=False, pause_between=5, port=None, servers=[],
                  socks_port=None):
-        self.initial_pause = initial_pause
+        self.pause_initial = pause_initial
+        self.pause_between = pause_between
         self.num_transfers = num_transfers
         self.transfer_size = transfer_size
         self.continuous_transfers = continuous_transfers
-        self.inter_transfer_pause = inter_transfer_pause
         self.port = port
         self.servers = servers
         self.socks_port = socks_port
@@ -98,20 +98,17 @@ class TorperfModel(GeneratableTGenModel):
                        loglevel="info",
                        heartbeat="1 minute")
 
-        g.add_node("pause", time="%d seconds" % self.config.initial_pause)
-        g.add_edge("start", "pause")
-
-        # "One-shot mode," i.e., onionperf will stop after the given number of
-        # iterations.  The idea is:
-        # start -> pause -> stream-1 -> pause-1 -> ... -> stream-n -> pause-n -> end
+        g.add_node("pause_initial",
+                   time="%d seconds" % self.config.pause_initial)
         g.add_node("stream",
                    sendsize="0",
                    recvsize=self.config.transfer_size,
                    timeout="15 seconds",
                    stallout="10 seconds")
         g.add_node("pause_between",
-                   time="%d seconds" % self.config.inter_transfer_pause)
+                   time="%d seconds" % self.config.pause_between)
 
+        g.add_edge("start", "pause_initial")
         g.add_edge("pause_initial", "stream")
 
         # only add an end node if we need to stop

@@ -190,16 +190,16 @@ def main():
         action="store", dest="tgenconnectport",
         default=8080)
 
-    measure_parser.add_argument('--tgen-start-pause',
+    measure_parser.add_argument('--tgen-pause-initial',
         help="""the number of seconds TGen should wait before walking through its action graph""",
         metavar="N", type=int,
-        action="store", dest="tgenstartpause",
+        action="store", dest="tgenpauseinitial",
         default=5)
 
-    measure_parser.add_argument('--tgen-intertransfer-pause',
+    measure_parser.add_argument('--tgen-pause-between',
         help="""the number of seconds TGen should wait in between two transfers""",
         metavar="N", type=int,
-        action="store", dest="tgenintertransferpause",
+        action="store", dest="tgenpausebetween",
         default=300)
 
     measure_parser.add_argument('--tgen-transfer-size',
@@ -377,11 +377,11 @@ def measure(args):
                                     tor_ctl_port=server_tor_ctl_port,
                                     tor_socks_port=server_tor_socks_port)
 
-        tgen_model = TGenModelConf(initial_pause=args.tgenstartpause,
+        tgen_model = TGenModelConf(pause_initial=args.tgenpauseinitial,
                                    transfer_size=args.tgentransfersize,
                                    num_transfers=args.tgennumtransfers,
                                    continuous_transfers=args.tgennumtransfers == 0,
-                                   inter_transfer_pause=args.tgenintertransferpause)
+                                   pause_between=args.tgenpausebetween)
 
         meas = Measurement(args.torpath,
                            args.tgenpath,
