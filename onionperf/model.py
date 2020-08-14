@@ -104,40 +104,30 @@ class TorperfModel(GeneratableTGenModel):
         # "One-shot mode," i.e., onionperf will stop after the given number of
         # iterations.  The idea is:
         # start -> pause -> stream-1 -> pause-1 -> ... -> stream-n -> pause-n -> end
-        if self.config.num_transfers > 0:
-            for i in range(self.config.num_transfers):
-                g.add_node("stream-%d" % i,
-                           sendsize="0",
-                           recvsize=self.config.transfer_size,
-                           timeout="15 seconds",
-                           stallout="10 seconds")
-                g.add_node("pause-%d" % i,
-                           time="%d seconds" % self.config.inter_transfer_pause)
+        g.add_node("stream",
+                   sendsize="0",
+                   recvsize=self.config.transfer_size,
+                   timeout="15 seconds",
+                   stallout="10 seconds")
+        g.add_node("pause_between",
+                   time="%d seconds" % self.config.inter_transfer_pause)
 
-                g.add_edge("stream-%d" % i, "pause-%d" % i)
-                if i > 0:
-                    g.add_edge("pause-%d" % (i-1), "stream-%d" % i)
+        g.add_edge("pause_initial", "stream")
 
+        # only add an end node if we need to stop
+        if self.config.continuous_transfers:
+            # continuous mode, i.e., no end node
+            g.add_edge("stream", "pause_between")
+        else:
+            # one-shot mode, i.e., end after configured number of transfers
             g.add_node("end",
                        count=str(self.config.num_transfers))
-            g.add_edge("pause", "stream-0")
-            g.add_edge("pause-%d" % (self.config.num_transfers - 1), "end")
+            # check for end condition after every transfer
+            g.add_edge("stream", "end")
+            # if end condition not met, pause
+            g.add_edge("end", "pause_between")
 
-        # Continuous mode, i.e., onionperf will not stop.  The idea is:
-        # start -> pause -> stream -> pause
-        #                       ^       |
-        #                       +-------+
-        elif self.config.continuous_transfers:
-            g.add_node("stream",
-                       sendsize="0",
-                       recvsize=self.config.transfer_size,
-                       timeout="15 seconds",
-                       stallout="10 seconds")
-            g.add_node("pause",
-                       time="%d seconds" % self.config.inter_transfer_pause)
-            g.add_edge("pause", "stream")
-            g.add_edge("stream", "pause")
-            g.add_edge("pause", "stream")
+        g.add_edge("pause_between", "stream")
 
         return g
 
