@@ -194,7 +194,7 @@ def main():
         help="""the number of seconds TGen should wait before walking through its action graph""",
         metavar="N", type=int,
         action="store", dest="tgenpauseinitial",
-        default=5)
+        default=300)
 
     measure_parser.add_argument('--tgen-pause-between',
         help="""the number of seconds TGen should wait in between two transfers""",

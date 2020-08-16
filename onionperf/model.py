@@ -43,8 +43,8 @@ class TGenLoadableModel(TGenModel):
 
 class TGenModelConf(object):
     """Represents a TGen traffic model configuration."""
-    def __init__(self, pause_initial=0, num_transfers=1, transfer_size="5 MiB",
-                 continuous_transfers=False, pause_between=5, port=None, servers=[],
+    def __init__(self, pause_initial=300, num_transfers=1, transfer_size="5 MiB",
+                 continuous_transfers=False, pause_between=300, port=None, servers=[],
                  socks_port=None):
         self.pause_initial = pause_initial
         self.pause_between = pause_between
@@ -103,28 +103,24 @@ class TorperfModel(GeneratableTGenModel):
         g.add_node("stream",
                    sendsize="0",
                    recvsize=self.config.transfer_size,
-                   timeout="15 seconds",
-                   stallout="10 seconds")
+                   timeout="270 seconds",
+                   stallout="0 seconds")
         g.add_node("pause_between",
                    time="%d seconds" % self.config.pause_between)
 
         g.add_edge("start", "pause_initial")
         g.add_edge("pause_initial", "stream")
+        g.add_edge("pause_initial", "pause_between")
+        g.add_edge("pause_between", "stream")
+        g.add_edge("pause_between", "pause_between")
 
         # only add an end node if we need to stop
-        if self.config.continuous_transfers:
-            # continuous mode, i.e., no end node
-            g.add_edge("stream", "pause_between")
-        else:
+        if not self.config.continuous_transfers:
             # one-shot mode, i.e., end after configured number of transfers
             g.add_node("end",
                        count="%d" % self.config.num_transfers)
             # check for end condition after every transfer
             g.add_edge("stream", "end")
-            # if end condition not met, pause
-            g.add_edge("end", "pause_between")
-
-        g.add_edge("pause_between", "stream")
 
         return g
 

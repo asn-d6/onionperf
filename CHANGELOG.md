@@ -1,3 +1,10 @@
+# Changes in version 0.7 - 2020-??-??
+
+ - Remove the `onionperf measure --oneshot` switch and replace it with
+   new switches `--tgen-pause-initial`, `--tgen-pause-between`,
+   `--tgen-transfer-size`, and `--tgen-num-transfers ` to further
+   configure the generated TGen model.
+
 # Changes in version 0.6 - 2020-??-??
 
  - Update to TGen 1.0.0, use TGenTools for parsing TGen log files, and
