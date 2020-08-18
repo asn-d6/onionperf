@@ -1,3 +1,9 @@
+# Changes in version 0.7 - 2020-??-??
+
+ - Add a new `onionperf filter` mode that takes an OnionPerf analysis
+   results file as input, applies filters, and produces a new
+   OnionPerf analysis results file as output.
+
 # Changes in version 0.6 - 2020-08-08
 
  - Update to TGen 1.0.0, use TGenTools for parsing TGen log files, and

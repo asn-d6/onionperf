@@ -62,6 +62,11 @@ class OPAnalysis(Analysis):
         self.json_db['data'][self.nickname]["tgen"].pop("stream_summary")
         self.did_analysis = True
 
+    def set_tgen_transfers(self, node, tgen_transfers):
+        self.json_db['data'][node]['tgen']['transfers'] = tgen_transfers
+
+    def set_tgen_streams(self, node, tgen_streams):
+        self.json_db['data'][node]['tgen']['streams'] = tgen_streams
 
     def save(self, filename=None, output_prefix=os.getcwd(), do_compress=True, date_prefix=None):
         if filename is None:
@@ -95,6 +100,12 @@ class OPAnalysis(Analysis):
     def get_tgen_transfers(self, node):
         try:
             return self.json_db['data'][node]['tgen']['transfers']
+        except:
+            return None
+
+    def get_tor_circuits(self, node):
+        try:
+            return self.json_db['data'][node]['tor']['circuits']
         except:
             return None
 
