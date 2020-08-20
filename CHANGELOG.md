@@ -1,3 +1,8 @@
+# Changes in version 0.7 - 2020-??-??
+
+ - Add `onionperf measure --drop-guards` parameter to use and drop
+   guards after a given number of hours. Implements #33399.
+
 # Changes in version 0.6 - 2020-08-08
 
  - Update to TGen 1.0.0, use TGenTools for parsing TGen log files, and
