@@ -173,7 +173,7 @@ def logrotate_thread_task(writables, tgen_writable, torctl_writable, docroot, ni
 
 class Measurement(object):
 
-    def __init__(self, tor_bin_path, tgen_bin_path, datadir_path, privatedir_path, nickname, oneshot, additional_client_conf=None, torclient_conf_file=None, torserver_conf_file=None, single_onion=False):
+    def __init__(self, tor_bin_path, tgen_bin_path, datadir_path, privatedir_path, nickname, oneshot, additional_client_conf=None, torclient_conf_file=None, torserver_conf_file=None, single_onion=False, drop_guards_interval_hours=None):
         self.tor_bin_path = tor_bin_path
         self.tgen_bin_path = tgen_bin_path
         self.datadir_path = datadir_path
@@ -189,6 +189,7 @@ class Measurement(object):
         self.torclient_conf_file = torclient_conf_file
         self.torserver_conf_file = torserver_conf_file
         self.single_onion = single_onion
+        self.drop_guards_interval_hours = drop_guards_interval_hours
 
     def run(self, do_onion=True, do_inet=True, client_tgen_listen_port=58888, client_tgen_connect_ip='0.0.0.0', client_tgen_connect_port=8080, client_tor_ctl_port=59050, client_tor_socks_port=59000,
              server_tgen_listen_port=8080, server_tor_ctl_port=59051, server_tor_socks_port=59001):
@@ -389,7 +390,7 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory 
                 tor_config = tor_config + f.read()
         if name == "client" and self.additional_client_conf:
             tor_config += self.additional_client_conf
-        if not 'UseEntryGuards' in tor_config and not 'UseBridges' in tor_config:
+        if not 'UseEntryGuards' in tor_config and not 'UseBridges' in tor_config and self.drop_guards_interval_hours == 0:
             tor_config += "UseEntryGuards 0\n"
         if name == "server" and self.single_onion:
             tor_config += "HiddenServiceSingleHopMode 1\nHiddenServiceNonAnonymousMode 1\n"
@@ -471,7 +472,7 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory 
 
         torctl_events = [e for e in monitor.get_supported_torctl_events() if e not in ['DEBUG', 'INFO', 'NOTICE', 'WARN', 'ERR']]
         newnym_interval_seconds = 300
-        torctl_args = (control_port, torctl_writable, torctl_events, newnym_interval_seconds, self.done_event)
+        torctl_args = (control_port, torctl_writable, torctl_events, newnym_interval_seconds, self.drop_guards_interval_hours, self.done_event)
         torctl_helper = threading.Thread(target=monitor.tor_monitor_run, name="torctl_{0}_helper".format(name), args=torctl_args)
         torctl_helper.start()
         self.threads.append(torctl_helper)

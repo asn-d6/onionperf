@@ -195,6 +195,12 @@ def main():
         action="store", dest="tgenconnectport",
         default=8080)
 
+    measure_parser.add_argument('--drop-guards',
+        help="""Use and drop guards every N > 0 hours, or do not use guards at all if N = 0""",
+        metavar="N", type=type_nonnegative_integer,
+        action="store", dest="drop_guards_interval_hours",
+        default=0)
+
     onion_or_inet_only_group = measure_parser.add_mutually_exclusive_group()
 
     onion_or_inet_only_group.add_argument('-o', '--onion-only',
@@ -356,7 +362,8 @@ def measure(args):
                            args.additional_client_conf,
                            args.torclient_conf_file,
                            args.torserver_conf_file,
-                           args.single_onion)
+                           args.single_onion,
+                           args.drop_guards_interval_hours)
 
         meas.run(do_onion=not args.inet_only,
                  do_inet=not args.onion_only,

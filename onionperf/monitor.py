@@ -23,7 +23,7 @@ class TorMonitor(object):
         self.writable = writable
         self.events = events
 
-    def run(self, newnym_interval_seconds=None, done_ev=None):
+    def run(self, newnym_interval_seconds=None, drop_guards_interval_hours=0, done_ev=None):
         with Controller.from_port(port=self.tor_ctl_port) as torctl:
             torctl.authenticate()
 
@@ -55,6 +55,10 @@ class TorMonitor(object):
             # let stem run its threads and log all of the events, until user interrupts
             try:
                 interval_count = 0
+                if newnym_interval_seconds is not None:
+                    next_newnym = newnym_interval_seconds
+                if drop_guards_interval_hours > 0:
+                    next_drop_guards = drop_guards_interval_hours * 3600
                 while done_ev is None or not done_ev.is_set():
                     # if self.filepath != '-' and os.path.exists(self.filepath):
                     #    with open(self.filepath, 'rb') as sizef:
@@ -62,9 +66,13 @@ class TorMonitor(object):
                     #        logging.info(msg)
                     sleep(1)
                     interval_count += 1
-                    if newnym_interval_seconds is not None and interval_count >= newnym_interval_seconds:
-                        interval_count = 0
+                    if newnym_interval_seconds is not None and interval_count >= next_newnym:
+                        next_newnym += newnym_interval_seconds
                         torctl.signal(Signal.NEWNYM)
+                    if drop_guards_interval_hours > 0 and interval_count >= next_drop_guards:
+                        next_drop_guards += drop_guards_interval_hours * 3600
+                        torctl.drop_guards()
+
             except KeyboardInterrupt:
                 pass  # the user hit ctrl+c
 
@@ -80,6 +88,6 @@ class TorMonitor(object):
         unix_ts = (utcnow - epoch).total_seconds()
         writable.write("{0} {1:.02f} {2}".format(now.strftime("%Y-%m-%d %H:%M:%S"), unix_ts, msg))
 
-def tor_monitor_run(tor_ctl_port, writable, events, newnym_interval_seconds, done_ev):
+def tor_monitor_run(tor_ctl_port, writable, events, newnym_interval_seconds, drop_guards_interval_hours, done_ev):
     torctl_monitor = TorMonitor(tor_ctl_port, writable, events)
-    torctl_monitor.run(newnym_interval_seconds=newnym_interval_seconds, done_ev=done_ev)
+    torctl_monitor.run(newnym_interval_seconds=newnym_interval_seconds, drop_guards_interval_hours=drop_guards_interval_hours, done_ev=done_ev)
