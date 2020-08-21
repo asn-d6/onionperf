@@ -28,13 +28,13 @@ class Filtering(object):
                     self.fingerprints_to_include.append(fingerprint)
 
     def exclude_fingerprints(self, path):
-        self.exclude_fingerprints = []
+        self.fingerprints_to_exclude = []
         with open(path, 'rt') as f:
             for line in f:
                 fingerprint_match = self.fingerprint_pattern.match(line)
                 if fingerprint_match:
                     fingerprint = fingerprint_match.group(1).upper()
-                    self.exclude_fingerprints.append(fingerprint)
+                    self.fingerprints_to_exclude.append(fingerprint)
 
     def apply_filters(self):
         if self.fingerprints_to_include is None and self.fingerprints_to_exclude is None:
