@@ -439,6 +439,9 @@ def analyze(args):
 def filter(args):
     from onionperf.filtering import Filtering
 
+    p = os.path.abspath(os.path.expanduser(args.input))
+    if not os.path.exists(p):
+        raise argparse.ArgumentTypeError("path '%s' does not exist" % args.input)
     filtering = Filtering()
     filtering.read_input(args.input)
     if args.include_fingerprints is not None:
