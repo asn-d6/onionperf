@@ -73,7 +73,7 @@ class Filtering(object):
                     for tor_stream in tor_streams_by_source_port[source_port]:
                         if abs(unix_ts_end - tor_stream["unix_ts_end"]) < 150.0:
                             circuit_id = tor_stream["circuit_id"]
-                if circuit_id and circuit_id in tor_circuits:
+                if circuit_id and str(circuit_id) in tor_circuits:
                     tor_circuit = tor_circuits[circuit_id]
                     path = tor_circuit["path"]
                     keep = True
