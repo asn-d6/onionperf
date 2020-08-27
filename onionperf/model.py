@@ -41,6 +41,21 @@ class TGenLoadableModel(TGenModel):
         model_instance = cls(graph)
         return model_instance
 
+class TGenModelConf(object):
+    """Represents a TGen traffic model configuration."""
+    def __init__(self, pause_initial=300, num_transfers=1, transfer_size="5 MiB",
+                 continuous_transfers=False, pause_between=300, port=None, servers=[],
+                 socks_port=None):
+        self.pause_initial = pause_initial
+        self.pause_between = pause_between
+        self.num_transfers = num_transfers
+        self.transfer_size = transfer_size
+        self.continuous_transfers = continuous_transfers
+        self.port = port
+        self.servers = servers
+        self.socks_port = socks_port
+
+
 class GeneratableTGenModel(TGenModel, metaclass=ABCMeta):
 
     @abstractmethod
@@ -58,59 +73,56 @@ class ListenModel(GeneratableTGenModel):
         g.add_node("start", serverport=self.tgen_port, loglevel="info", heartbeat="1 minute")
         return g
 
+
 class TorperfModel(GeneratableTGenModel):
 
-    def __init__(self, tgen_port="8889", tgen_servers=["127.0.0.1:8888"], socksproxy=None):
-        self.tgen_port = tgen_port
-        self.tgen_servers = tgen_servers
-        self.socksproxy = socksproxy
+    def __init__(self, config):
+        self.config = config
         self.graph = self.generate()
 
     def generate(self):
-        server_str = ','.join(self.tgen_servers)
+        server_str = ','.join(self.config.servers)
         g = DiGraph()
 
-        if self.socksproxy is not None:
-            g.add_node("start", serverport=self.tgen_port, peers=server_str, loglevel="info", heartbeat="1 minute", socksproxy=self.socksproxy)
+        if self.config.socks_port is not None:
+            g.add_node("start",
+                       serverport=self.config.port,
+                       peers=server_str,
+                       loglevel="info",
+                       heartbeat="1 minute",
+                       socksproxy="127.0.0.1:{0}".format(self.config.socks_port))
         else:
-            g.add_node("start", serverport=self.tgen_port, peers=server_str, loglevel="info", heartbeat="1 minute")
-        g.add_node("pause", time="5 minutes")
-        g.add_node("stream5m", sendsize="0", recvsize="5 mib", timeout="270 seconds", stallout="0 seconds")
+            g.add_node("start",
+                       serverport=self.config.port,
+                       peers=server_str,
+                       loglevel="info",
+                       heartbeat="1 minute")
 
-        g.add_edge("start", "pause")
+        g.add_node("pause_initial",
+                   time="%d seconds" % self.config.pause_initial)
+        g.add_node("stream",
+                   sendsize="0",
+                   recvsize=self.config.transfer_size,
+                   timeout="270 seconds",
+                   stallout="0 seconds")
+        g.add_node("pause_between",
+                   time="%d seconds" % self.config.pause_between)
 
-        # after the pause, we start another pause timer while *at the same time* choosing one of
-        # the file sizes and downloading it from one of the servers in the server pool
-        g.add_edge("pause", "pause")
+        g.add_edge("start", "pause_initial")
+        g.add_edge("pause_initial", "stream")
+        g.add_edge("pause_initial", "pause_between")
+        g.add_edge("pause_between", "stream")
+        g.add_edge("pause_between", "pause_between")
 
-        # these are chosen with weighted probability, change edge 'weight' attributes to adjust probability
-        g.add_edge("pause", "stream5m")
+        # only add an end node if we need to stop
+        if not self.config.continuous_transfers:
+            # one-shot mode, i.e., end after configured number of transfers
+            g.add_node("end",
+                       count="%d" % self.config.num_transfers)
+            # check for end condition after every transfer
+            g.add_edge("stream", "end")
 
         return g
-
-class OneshotModel(GeneratableTGenModel):
-
-    def __init__(self, tgen_port="8889", tgen_servers=["127.0.0.1:8888"], socksproxy=None):
-        self.tgen_port = tgen_port
-        self.tgen_servers = tgen_servers
-        self.socksproxy = socksproxy
-        self.graph = self.generate()
-
-    def generate(self):
-        server_str = ','.join(self.tgen_servers)
-        g = DiGraph()
-
-        if self.socksproxy is not None:
-            g.add_node("start", serverport=self.tgen_port, peers=server_str, loglevel="info", heartbeat="1 minute", socksproxy=self.socksproxy)
-        else:
-            g.add_node("start", serverport=self.tgen_port, peers=server_str, loglevel="info", heartbeat="1 minute")
-        g.add_node("stream5m", sendsize="0", recvsize="5 mib", timeout="270 seconds", stallout="0 seconds")
-
-        g.add_edge("start", "stream5m")
-        g.add_edge("stream5m", "start")
-
-        return g
-
 
 
 def dump_example_tgen_torperf_model(domain_name, onion_name):
