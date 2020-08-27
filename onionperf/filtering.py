@@ -15,9 +15,6 @@ class Filtering(object):
         self.fingerprints_to_exclude = None
         self.fingerprint_pattern = re.compile("\$?([0-9a-fA-F]{40})")
 
-    def read_input(self, path):
-        self.analysis = OPAnalysis.load(filename=path)
-
     def include_fingerprints(self, path):
         self.fingerprints_to_include = []
         with open(path, 'rt') as f:
@@ -36,7 +33,8 @@ class Filtering(object):
                     fingerprint = fingerprint_match.group(1).upper()
                     self.fingerprints_to_exclude.append(fingerprint)
 
-    def apply_filters(self):
+    def apply_filters(self, input_path, output_dir, output_file):
+        self.analysis = OPAnalysis.load(filename=input_path)
         if self.fingerprints_to_include is None and self.fingerprints_to_exclude is None:
             return
         for source in self.analysis.get_nodes():
@@ -94,7 +92,5 @@ class Filtering(object):
                         retained_tgen_transfers[transfer_id] = transfer_data
             self.analysis.set_tgen_streams(source, retained_tgen_streams)
             self.analysis.set_tgen_transfers(source, retained_tgen_transfers)
-
-    def write_output(self, path):
-        self.analysis.save(filename=path)
+        self.analysis.save(filename=output_file, output_prefix=output_dir)
 

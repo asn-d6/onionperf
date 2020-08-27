@@ -1,8 +1,8 @@
 # Changes in version 0.7 - 2020-??-??
 
  - Add a new `onionperf filter` mode that takes an OnionPerf analysis
-   results file as input, applies filters, and produces a new
-   OnionPerf analysis results file as output.
+   results file or directory as input, applies filters, and produces
+   new OnionPerf analysis results file(s) as output.
 
 # Changes in version 0.6 - 2020-08-08
 
