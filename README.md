@@ -16,6 +16,7 @@
     + [Troubleshooting](#troubleshooting)
   * [Analysis](#analysis)
     + [Analyzing measurement results](#analyzing-measurement-results)
+    + [Filtering measurement results](#filtering-measurement-results)
     + [Visualizing measurement results](#visualizing-measurement-results)
     + [Interpreting the PDF output format](#interpreting-the-pdf-output-format)
     + [Interpreting the CSV output format](#interpreting-the-csv-output-format)
@@ -251,6 +252,28 @@ OnionPerf's `analyze` mode has several command-line parameters for customizing t
 ```shell
 onionperf analyze --help
 ```
+### Filtering measurement results
+
+OnionPerf measurement results can be filtered based on Tor relay fingerprints.
+The `filter` mode takes a list of fingerprints and one or more existing analysis files as inputs, and outputs new analysis files containing only the `tgen` results obtained over a Tor circuit path which includes or excludes fingerprints in the input list.
+
+Where excluding fingerprints, if ANY relay fingerprint is matched, the measurement is discarded. Where including fingerprints, ALL relay fingerprints in a path must match for the measurement to be retained.
+
+For example, the analysis file produced above can be filtered with the following command, which retains measurements based on fingerprints contained in the file 'fingerprints.txt':
+
+```shell
+onionperf filter -i onionperf.analysis.json.xz -o filtered.onionperf.analysis.json.xz --include-fingerprints fingerprints.txt
+```
+
+The output analysis file is written to the path specified with `-o`. If processing a directory of analysis files, its structure and filenames are preserved under the path specified with '-o'.
+Note that while the subcommand filters `tgen` measurements, it leaves `tgen` and `tor` summaries in the original analysis file unchanged.
+
+OnionPerf's `filter` command usage can be inspected with:
+
+```shell
+onionperf filter --help
+```
+
 
 ### Visualizing measurement results
 
