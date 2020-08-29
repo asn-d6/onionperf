@@ -458,11 +458,12 @@ def filter(args):
         output_dir, output_file = os.path.split(output_path)
         filtering.apply_filters(input_path=input_path, output_dir=output_dir, output_file=output_file)
     else:
-        for dirpath, dirnames, filenames in os.walk(input_path):
-            for filename in filenames:
-                input_file = os.path.join(dirpath, filename)
-                output_dir = os.path.join(output_path, os.path.relpath(dirpath, input_path))
-                filtering.apply_filters(input_path=input_file, output_dir=output_dir, output_file=filename)
+        from onionperf import reprocessing
+        analyses = reprocessing.collect_logs(input_path, '*onionperf.analysis.*')
+        for analysis in analyses:
+            full_output_path = os.path.join(output_path, os.path.relpath(analysis, input_path))
+            output_dir, output_file = os.path.split(full_output_path)
+            filtering.apply_filters(input_path=analysis, output_dir=output_dir, output_file=output_file)
 
 def visualize(args):
     from onionperf.visualization import TGenVisualization
