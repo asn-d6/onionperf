@@ -79,10 +79,10 @@ class Filtering(object):
                         fingerprint_match = self.fingerprint_pattern.match(long_name)
                         if fingerprint_match:
                             fingerprint = fingerprint_match.group(1).upper()
-                            if self.fingerprints_to_include and fingerprint not in self.fingerprints_to_include:
+                            if self.fingerprints_to_include is not None and fingerprint not in self.fingerprints_to_include:
                                 keep = False
                                 break
-                            if self.fingerprints_to_exclude and fingerprint in self.fingerprints_to_exclude:
+                            if self.fingerprints_to_exclude is not None and fingerprint in self.fingerprints_to_exclude:
                                 keep = False
                                 break
                 if keep:
