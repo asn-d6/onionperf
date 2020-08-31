@@ -31,11 +31,11 @@ class Visualization(object, metaclass=ABCMeta):
 
 class TGenVisualization(Visualization):
 
-    def plot_all(self, output_prefix):
+    def plot_all(self, output_prefix, outer_join=False):
         if len(self.datasets) > 0:
             prefix = output_prefix + '.' if output_prefix is not None else ''
             ts = time.strftime("%Y-%m-%d_%H:%M:%S")
-            self.__extract_data_frame()
+            self.__extract_data_frame(outer_join)
             self.data.to_csv("{0}onionperf.viz.{1}.csv".format(prefix, ts))
             sns.set_context("paper")
             self.page = PdfPages("{0}onionperf.viz.{1}.pdf".format(prefix, ts))
@@ -51,7 +51,7 @@ class TGenVisualization(Visualization):
             self.__plot_errors_time()
             self.page.close()
 
-    def __extract_data_frame(self):
+    def __extract_data_frame(self, outer_join=False):
         streams = []
         for (analyses, label) in self.datasets:
             for analysis in analyses:
@@ -62,6 +62,7 @@ class TGenVisualization(Visualization):
                         if "source" in tor_stream and ":" in tor_stream["source"]:
                             source_port = tor_stream["source"].split(":")[1]
                             tor_streams_by_source_port.setdefault(source_port, []).append(tor_stream)
+                    tor_circuits = analysis.get_tor_circuits(client)
                     tgen_streams = analysis.get_tgen_streams(client)
                     tgen_transfers = analysis.get_tgen_transfers(client)
                     while tgen_streams or tgen_transfers:
@@ -122,20 +123,30 @@ class TGenVisualization(Visualization):
                                 unix_ts_end = transfer_data["unix_ts_end"]
                             if "unix_ts_start" in transfer_data:
                                 stream["start"] = datetime.datetime.utcfromtimestamp(transfer_data["unix_ts_start"])
+                        tor_stream = None
+                        tor_circuit = None
+                        if source_port and unix_ts_end:
+                            for s in tor_streams_by_source_port[source_port]:
+                                if abs(unix_ts_end - s["unix_ts_end"]) < 150.0:
+                                    tor_stream = s
+                                    break
+                        if tor_stream and "circuit_id" in tor_stream:
+                            circuit_id = tor_stream["circuit_id"]
+                            if str(circuit_id) in tor_circuits:
+                                tor_circuit = tor_circuits[circuit_id]
                         if error_code:
                             if error_code == "PROXY":
                                 error_code_parts = ["TOR"]
                             else:
                                 error_code_parts = ["TGEN", error_code]
-                            if source_port and unix_ts_end:
-                                for tor_stream in tor_streams_by_source_port[source_port]:
-                                    if abs(unix_ts_end - tor_stream["unix_ts_end"]) < 150.0:
-                                        if "failure_reason_local" in tor_stream:
-                                            error_code_parts.append(tor_stream["failure_reason_local"])
-                                            if "failure_reason_remote" in tor_stream:
-                                                error_code_parts.append(tor_stream["failure_reason_remote"])
+                            if tor_stream:
+                                if "failure_reason_local" in tor_stream:
+                                    error_code_parts.append(tor_stream["failure_reason_local"])
+                                    if "failure_reason_remote" in tor_stream:
+                                        error_code_parts.append(tor_stream["failure_reason_remote"])
                             stream["error_code"] = "/".join(error_code_parts)
-                        streams.append(stream)
+                        if tor_circuit or outer_join:
+                            streams.append(stream)
         self.data = pd.DataFrame.from_records(streams, index="id")
 
     def __plot_firstbyte_ecdf(self):

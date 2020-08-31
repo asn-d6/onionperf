@@ -62,13 +62,7 @@ class OPAnalysis(Analysis):
         self.json_db['data'][self.nickname]["tgen"].pop("stream_summary")
         self.did_analysis = True
 
-    def set_tgen_transfers(self, node, tgen_transfers):
-        self.json_db['data'][node]['tgen']['transfers'] = tgen_transfers
-
-    def set_tgen_streams(self, node, tgen_streams):
-        self.json_db['data'][node]['tgen']['streams'] = tgen_streams
-
-    def save(self, filename=None, output_prefix=os.getcwd(), do_compress=True, date_prefix=None):
+    def save(self, filename=None, output_prefix=os.getcwd(), do_compress=True, date_prefix=None, sort_keys=True):
         if filename is None:
             base_filename = "onionperf.analysis.json.xz"
             if date_prefix is not None:
@@ -85,7 +79,7 @@ class OPAnalysis(Analysis):
         logging.info("saving analysis results to {0}".format(filepath))
 
         outf = util.FileWritable(filepath, do_compress=do_compress)
-        json.dump(self.json_db, outf, sort_keys=True, separators=(',', ': '), indent=2)
+        json.dump(self.json_db, outf, sort_keys=sort_keys, separators=(',', ': '), indent=2)
         outf.close()
 
         logging.info("done!")
@@ -108,6 +102,9 @@ class OPAnalysis(Analysis):
             return self.json_db['data'][node]['tor']['circuits']
         except:
             return None
+
+    def set_tor_circuits(self, node, tor_circuits):
+        self.json_db['data'][node]['tor']['circuits'] = tor_circuits
 
     def get_tor_streams(self, node):
         try:
