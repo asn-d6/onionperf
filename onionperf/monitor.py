@@ -57,21 +57,23 @@ class TorMonitor(object):
                 interval_count = 0
                 if newnym_interval_seconds is not None:
                     next_newnym = newnym_interval_seconds
-                if drop_guards_interval_hours > 0:
-                    next_drop_guards = drop_guards_interval_hours * 3600
+                next_drop_guards = 0
                 while done_ev is None or not done_ev.is_set():
                     # if self.filepath != '-' and os.path.exists(self.filepath):
                     #    with open(self.filepath, 'rb') as sizef:
                     #        msg = "tor-ctl-logger[port={0}] logged {1} bytes to {2}, press CTRL-C to quit".format(self.tor_ctl_port, os.fstat(sizef.fileno()).st_size, self.filepath)
                     #        logging.info(msg)
+                    if drop_guards_interval_hours > 0 and interval_count >= next_drop_guards:
+                        next_drop_guards += drop_guards_interval_hours * 3600
+                        torctl.drop_guards()
+                        drop_timeouts_response = torctl.msg("DROPTIMEOUTS")
+                        if not drop_timeouts_response.is_ok():
+                            self.__log(self.writable, "[WARNING] unrecognized command DROPTIMEOUTS in tor\n")
                     sleep(1)
                     interval_count += 1
                     if newnym_interval_seconds is not None and interval_count >= next_newnym:
                         next_newnym += newnym_interval_seconds
                         torctl.signal(Signal.NEWNYM)
-                    if drop_guards_interval_hours > 0 and interval_count >= next_drop_guards:
-                        next_drop_guards += drop_guards_interval_hours * 3600
-                        torctl.drop_guards()
 
             except KeyboardInterrupt:
                 pass  # the user hit ctrl+c
