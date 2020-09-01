@@ -215,7 +215,7 @@ def main():
         default=0)
 
     measure_parser.add_argument('--drop-guards',
-        help="""Use and drop guards every N > 0 hours, or do not use guards at all if N = 0""",
+        help="""Use and drop guards and circuit build timeouts every N > 0 hours, or do not use guards at all and never drop circuit build timeouts if N = 0""",
         metavar="N", type=type_nonnegative_integer,
         action="store", dest="drop_guards_interval_hours",
         default=0)
