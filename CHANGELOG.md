@@ -1,4 +1,4 @@
-# Changes in version 0.7 - 2020-??-??
+# Changes in version 0.7 - 2020-09-01
 
  - Add `onionperf measure --drop-guards` parameter to use and drop
    guards and circuit build timeouts every given number of hours, if
