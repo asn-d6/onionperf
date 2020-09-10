@@ -31,11 +31,11 @@ class Visualization(object, metaclass=ABCMeta):
 
 class TGenVisualization(Visualization):
 
-    def plot_all(self, output_prefix, outer_join=False):
+    def plot_all(self, output_prefix):
         if len(self.datasets) > 0:
             prefix = output_prefix + '.' if output_prefix is not None else ''
             ts = time.strftime("%Y-%m-%d_%H:%M:%S")
-            self.__extract_data_frame(outer_join)
+            self.__extract_data_frame()
             self.data.to_csv("{0}onionperf.viz.{1}.csv".format(prefix, ts))
             sns.set_context("paper")
             self.page = PdfPages("{0}onionperf.viz.{1}.pdf".format(prefix, ts))
@@ -51,7 +51,7 @@ class TGenVisualization(Visualization):
             self.__plot_errors_time()
             self.page.close()
 
-    def __extract_data_frame(self, outer_join=False):
+    def __extract_data_frame(self):
         streams = []
         for (analyses, label) in self.datasets:
             for analysis in analyses:
@@ -145,8 +145,12 @@ class TGenVisualization(Visualization):
                                     if "failure_reason_remote" in tor_stream:
                                         error_code_parts.append(tor_stream["failure_reason_remote"])
                             stream["error_code"] = "/".join(error_code_parts)
-                        if tor_circuit or outer_join:
-                            streams.append(stream)
+
+                        if "filters" in analysis.json_db.keys() and analysis.json_db["filters"]["tor/circuits"]:
+                           if tor_circuit and "filtered" not in tor_circuit.keys():
+                               streams.append(stream)
+                        else:
+                           streams.append(stream)
         self.data = pd.DataFrame.from_records(streams, index="id")
 
     def __plot_firstbyte_ecdf(self):

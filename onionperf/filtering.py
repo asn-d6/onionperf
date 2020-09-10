@@ -7,6 +7,7 @@
 
 import re
 from onionperf.analysis import OPAnalysis
+from collections import defaultdict
 
 class Filtering(object):
 
@@ -14,9 +15,11 @@ class Filtering(object):
         self.fingerprints_to_include = None
         self.fingerprints_to_exclude = None
         self.fingerprint_pattern = re.compile("\$?([0-9a-fA-F]{40})")
+        self.filters = defaultdict(list)
 
     def include_fingerprints(self, path):
         self.fingerprints_to_include = []
+        self.fingerprints_to_include_path = path
         with open(path, 'rt') as f:
             for line in f:
                 fingerprint_match = self.fingerprint_pattern.match(line)
@@ -26,6 +29,7 @@ class Filtering(object):
 
     def exclude_fingerprints(self, path):
         self.fingerprints_to_exclude = []
+        self.fingerprints_to_exclude_path = path
         with open(path, 'rt') as f:
             for line in f:
                 fingerprint_match = self.fingerprint_pattern.match(line)
@@ -33,12 +37,16 @@ class Filtering(object):
                     fingerprint = fingerprint_match.group(1).upper()
                     self.fingerprints_to_exclude.append(fingerprint)
 
-    def apply_filters(self, input_path, output_dir, output_file):
-        self.analysis = OPAnalysis.load(filename=input_path)
+    def filter_tor_circuits(self, analysis):
         if self.fingerprints_to_include is None and self.fingerprints_to_exclude is None:
             return
-        for source in self.analysis.get_nodes():
-            tor_circuits = self.analysis.get_tor_circuits(source)
+        self.filters["tor/circuits"] = []
+        if self.fingerprints_to_include:
+           self.filters["tor/circuits"].append({"name": "include_fingerprints", "filepath": self.fingerprints_to_include_path })
+        if self.fingerprints_to_exclude:
+           self.filters["tor/circuits"].append({"name": "exclude_fingerprints", "filepath": self.fingerprints_to_exclude_path })
+        for source in analysis.get_nodes():
+            tor_circuits = analysis.get_tor_circuits(source)
             filtered_circuit_ids = []
             for circuit_id, tor_circuit in tor_circuits.items():
                 keep = False
@@ -56,8 +64,11 @@ class Filtering(object):
                                 keep = False
                                 break
                 if not keep:
-                    filtered_circuit_ids.append(circuit_id)
-            for circuit_id in filtered_circuit_ids:
-                del(tor_circuits[circuit_id])
+                    tor_circuits[circuit_id]["filtered"] = True
+
+    def apply_filters(self, input_path, output_dir, output_file):
+        self.analysis = OPAnalysis.load(filename=input_path)
+        self.filter_tor_circuits(self.analysis)
+        self.analysis.json_db["filters"] = self.filters
         self.analysis.save(filename=output_file, output_prefix=output_dir, sort_keys=False)
 
