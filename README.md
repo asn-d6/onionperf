@@ -254,10 +254,12 @@ onionperf analyze --help
 ```
 ### Filtering measurement results
 
-OnionPerf measurement results can be filtered based on Tor relay fingerprints.
-The `filter` mode takes a list of fingerprints and one or more existing analysis files as inputs, and outputs new analysis files containing only the `tgen` results obtained over a Tor circuit path which includes or excludes fingerprints in the input list.
+The `filter` subcommand is typically used in combination with the `visualize` subcommand. The workflow is to filter out any Tor streams/circuits that are not desired then visualize only those measurements with an existing mapping between TGen transfers/streams and Tor streams/circuits.
 
-Where excluding fingerprints, if ANY relay fingerprint is matched, the measurement is discarded. Where including fingerprints, ALL relay fingerprints in a path must match for the measurement to be retained.
+Currently, OnionPerf measurement results can be filtered based on Tor relay fingerprints, although support for filtering TGen based on transfers/streams may be added in the future.
+
+The `filter` mode takes a list of fingerprints and one or more existing analysis files as inputs, and outputs new analysis files which include, unchanged, the Tor results obtained over a Tor circuit path which includes or excludes fingerprints in the input list. All other Tor results are also included in the file, but are marked as 'filtered\_out'.
+Filter metadata detailing the filter type and path to the input list used is also included in the analysis file.
 
 For example, the analysis file produced above can be filtered with the following command, which retains measurements based on fingerprints contained in the file 'fingerprints.txt':
 
@@ -289,6 +291,8 @@ As a result, two files are written to the current working directory:
 
 - `onionperf.viz.$datetime.csv` contains visualized data in a CSV file format; and
 - `onionperf.viz.$datetime.pdf` contains visualizations in a PDF file format.
+
+For analysis files containing tor circuit filters, only measurements with an existing mapping between TGen transfers/streams Tor streams/circuits which have not been marked as 'filtered\_out' are visualized.
 
 Similar to the other modes, OnionPerf's `visualize` mode has command-line parameters for customizing the visualization step:
 

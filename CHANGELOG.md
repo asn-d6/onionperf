@@ -3,6 +3,11 @@
  - Add a new `onionperf filter` mode that takes an OnionPerf analysis
    results file or directory as input, applies filters, and produces
    new OnionPerf analysis results file(s) as output.
+ - Bump the analysis version number to 4.0 for new analyses and analyses
+   produced by the `onionperf filter` mode
+ - Analyses produced by the `onionperf filter` mode have additional filter
+   metadata defined in a new 'filters' field, and an optional 'filtered\_out'
+   field per tor circuit
 
 # Changes in version 0.6 - 2020-08-08
 
