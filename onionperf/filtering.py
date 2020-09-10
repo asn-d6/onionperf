@@ -65,10 +65,12 @@ class Filtering(object):
                                 break
                 if not keep:
                     tor_circuits[circuit_id]["filtered"] = True
+                    tor_circuits[circuit_id] = dict(sorted(tor_circuit.items()))
 
     def apply_filters(self, input_path, output_dir, output_file):
         self.analysis = OPAnalysis.load(filename=input_path)
         self.filter_tor_circuits(self.analysis)
         self.analysis.json_db["filters"] = self.filters
+        self.analysis.json_db = dict(sorted(self.analysis.json_db.items()))
         self.analysis.save(filename=output_file, output_prefix=output_dir, sort_keys=False)
 
