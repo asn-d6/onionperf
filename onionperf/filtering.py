@@ -64,7 +64,7 @@ class Filtering(object):
                                 keep = False
                                 break
                 if not keep:
-                    tor_circuits[circuit_id]["filtered"] = True
+                    tor_circuits[circuit_id]["filtered_out"] = True
                     tor_circuits[circuit_id] = dict(sorted(tor_circuit.items()))
 
     def apply_filters(self, input_path, output_dir, output_file):

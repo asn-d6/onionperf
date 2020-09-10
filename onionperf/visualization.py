@@ -147,7 +147,7 @@ class TGenVisualization(Visualization):
                             stream["error_code"] = "/".join(error_code_parts)
 
                         if "filters" in analysis.json_db.keys() and analysis.json_db["filters"]["tor/circuits"]:
-                           if tor_circuit and "filtered" not in tor_circuit.keys():
+                           if tor_circuit and "filtered_out" not in tor_circuit.keys():
                                streams.append(stream)
                         else:
                            streams.append(stream)
