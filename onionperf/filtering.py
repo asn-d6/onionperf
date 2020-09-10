@@ -71,6 +71,7 @@ class Filtering(object):
         self.analysis = OPAnalysis.load(filename=input_path)
         self.filter_tor_circuits(self.analysis)
         self.analysis.json_db["filters"] = self.filters
+        self.analysis.json_db["version"] = '4.0'
         self.analysis.json_db = dict(sorted(self.analysis.json_db.items()))
         self.analysis.save(filename=output_file, output_prefix=output_dir, sort_keys=False)
 
