@@ -7,7 +7,6 @@
 
 import re
 from onionperf.analysis import OPAnalysis
-from collections import defaultdict
 
 class Filtering(object):
 
@@ -15,7 +14,6 @@ class Filtering(object):
         self.fingerprints_to_include = None
         self.fingerprints_to_exclude = None
         self.fingerprint_pattern = re.compile("\$?([0-9a-fA-F]{40})")
-        self.filters = defaultdict(list)
 
     def include_fingerprints(self, path):
         self.fingerprints_to_include = []
@@ -40,11 +38,12 @@ class Filtering(object):
     def filter_tor_circuits(self, analysis):
         if self.fingerprints_to_include is None and self.fingerprints_to_exclude is None:
             return
-        self.filters["tor/circuits"] = []
+        filters = analysis.json_db.setdefault("filters", {})
+        tor_circuits_filters = filters.setdefault("tor/circuits", [])
         if self.fingerprints_to_include:
-           self.filters["tor/circuits"].append({"name": "include_fingerprints", "filepath": self.fingerprints_to_include_path })
+           tor_circuits_filters.append({"name": "include_fingerprints", "filepath": self.fingerprints_to_include_path })
         if self.fingerprints_to_exclude:
-           self.filters["tor/circuits"].append({"name": "exclude_fingerprints", "filepath": self.fingerprints_to_exclude_path })
+           tor_circuits_filters.append({"name": "exclude_fingerprints", "filepath": self.fingerprints_to_exclude_path })
         for source in analysis.get_nodes():
             tor_circuits = analysis.get_tor_circuits(source)
             filtered_circuit_ids = []
@@ -68,10 +67,9 @@ class Filtering(object):
                     tor_circuits[circuit_id] = dict(sorted(tor_circuit.items()))
 
     def apply_filters(self, input_path, output_dir, output_file):
-        self.analysis = OPAnalysis.load(filename=input_path)
-        self.filter_tor_circuits(self.analysis)
-        self.analysis.json_db["filters"] = self.filters
-        self.analysis.json_db["version"] = '4.0'
-        self.analysis.json_db = dict(sorted(self.analysis.json_db.items()))
-        self.analysis.save(filename=output_file, output_prefix=output_dir, sort_keys=False)
+        analysis = OPAnalysis.load(filename=input_path)
+        self.filter_tor_circuits(analysis)
+        analysis.json_db["version"] = '4.0'
+        analysis.json_db = dict(sorted(analysis.json_db.items()))
+        analysis.save(filename=output_file, output_prefix=output_dir, sort_keys=False)
 
