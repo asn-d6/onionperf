@@ -1,0 +1,577 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "https://gitlab.torproject.org/tpo/metrics/onionperf/-/raw/master/schema/onionperf-4.0.json",
+  "type": "object",
+  "title": "OnionPerf analysis JSON file format 4.0",
+  "required": [
+    "data",
+    "type",
+    "version"
+  ],
+  "properties": {
+    "data": {
+      "type": "object",
+      "title": "Measurement data by source name",
+      "propertyNames": {
+        "pattern": "^[A-Za-z0-9-]+$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "title": "Measurement data from a single source",
+        "required": [
+          "measurement_ip",
+          "tgen",
+          "tor"
+        ],
+        "properties": {
+          "measurement_ip": {
+            "type": "string",
+            "title": "Public IP address of the measuring host."
+          },
+          "tgen": {
+            "type": "object",
+            "title": "Measurement data obtained from client-side TGen logs",
+            "required": [
+              "streams"
+            ],
+            "properties": {
+              "streams": {
+                "type": "object",
+                "title": "Measurement data, by TGen stream identifier",
+                "additionalProperties": {
+                  "type": "object",
+                  "title": "Information on a single measurement, obtained from a single [stream-success] or [stream-error] log message (except for elapsed_seconds)",
+                  "required": [
+                    "byte_info",
+                    "is_complete",
+                    "is_error",
+                    "is_success",
+                    "stream_id",
+                    "stream_info",
+                    "time_info",
+                    "transport_info",
+                    "unix_ts_end",
+                    "unix_ts_start"
+                  ],
+                  "properties": {
+                    "byte_info": {
+                      "type": "object",
+                      "title": "Information on sent and received bytes",
+                      "required": [
+                        "payload-bytes-recv",
+                        "payload-bytes-send",
+                        "payload-progress-recv",
+                        "payload-progress-send",
+                        "total-bytes-recv",
+                        "total-bytes-send"
+                      ],
+                      "properties": {
+                        "payload-bytes-recv": {
+                          "type": "string",
+                          "pattern": "^[0-9]+$",
+                          "title": "Number of payload bytes received"
+                        },
+                        "payload-bytes-send": {
+                          "type": "string",
+                          "pattern": "^[0-9]+$",
+                          "title": "Number of payload bytes sent"
+                        },
+                        "payload-progress-recv": {
+                          "type": "string",
+                          "pattern": "^[0-9]+\\.[0-9]+%$",
+                          "title": "Progress of receiving payload in percent"
+                        },
+                        "payload-progress-send": {
+                          "type": "string",
+                          "pattern": "^[0-9]+\\.[0-9]+%$",
+                          "title": "Progress of sending payload in percent"
+                        },
+                        "total-bytes-recv": {
+                          "type": "string",
+                          "pattern": "^[0-9]+$",
+                          "title": "Total number of bytes received"
+                        },
+                        "total-bytes-send": {
+                          "type": "string",
+                          "pattern": "^[0-9]+$",
+                          "title": "Total number of bytes sent"
+                        }
+                      }
+                    },
+                    "elapsed_seconds": {
+                      "type": "object",
+                      "title": "Elapsed seconds until a given number or fraction of payload bytes have been received or sent, obtained from [stream-status], [stream-success], and [stream-error] log messages, only included if the measurement was a success",
+                      "properties": {
+                        "payload_bytes_recv": {
+                          "type": "object",
+                          "title": "Number of received payload bytes",
+                          "propertyNames": {
+                            "pattern": "^[0-9]+$"
+                          },
+                          "additionalProperties": {
+                            "type": "number",
+                            "title": "Elapsed seconds"
+                          }
+                        },
+                        "payload_bytes_send": {
+                          "type": "object",
+                          "title": "Number of sent payload bytes",
+                          "propertyNames": {
+                            "pattern": "^[0-9]+$"
+                          },
+                          "additionalProperties": {
+                            "type": "number",
+                            "title": "Elapsed seconds"
+                          }
+                        },
+                        "payload_progress_recv": {
+                          "type": "object",
+                          "title": "Fraction of received payload bytes",
+                          "propertyNames": {
+                            "pattern": "^[01]\\.[0-9]$"
+                          },
+                          "additionalProperties": {
+                            "type": "number",
+                            "title": "Elapsed seconds"
+                          }
+                        },
+                        "payload_progress_send": {
+                          "type": "object",
+                          "title": "Fraction of sent payload bytes",
+                          "propertyNames": {
+                            "pattern": "^[01]\\.[0-9]$"
+                          },
+                          "additionalProperties": {
+                            "type": "number",
+                            "title": "Elapsed seconds"
+                          }
+                        }
+                      }
+                    },
+                    "is_complete": {
+                      "type": "boolean",
+                      "title": "Whether the stream finished, no matter the error state, which is always true, or otherwise the measurement would not be included here"
+                    },
+                    "is_error": {
+                      "type": "boolean",
+                      "title": "Whether an error occurred"
+                    },
+                    "is_success": {
+                      "type": "boolean",
+                      "title": "Whether the measurement was a success"
+                    },
+                    "stream_id": {
+                      "type": "string",
+                      "title": "Stream identifier"
+                    },
+                    "stream_info": {
+                      "type": "object",
+                      "title": "Information about the TGen stream",
+                      "required": [
+                        "error",
+                        "id",
+                        "name",
+                        "peername",
+                        "recvsize",
+                        "recvstate",
+                        "sendsize",
+                        "sendstate",
+                        "vertexid"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "title": "Error code, or NONE if no error occurred"
+                        },
+                        "id": {
+                          "type": "string",
+                          "title": "Stream numerical identifier, or 0 if the stream failed"
+                        },
+                        "name": {
+                          "type": "string",
+                          "title": "Hostname of the TGen client"
+                        },
+                        "peername": {
+                          "type": "string",
+                          "title": "Hostname of the TGen server"
+                        },
+                        "recvsize": {
+                          "type": "string",
+                          "title": "Number of expected payload bytes in the response"
+                        },
+                        "recvstate": {
+                          "type": "string",
+                          "title": "Last recorded receive state of the stream, one of RECV_{NONE,AUTHENTICATE,HEADER,MODEL,PAYLOAD,CHECKSUM,SUCCESS,ERROR}"
+                        },
+                        "sendsize": {
+                          "type": "string",
+                          "title": "Number of expected payload bytes in the request"
+                        },
+                        "sendstate": {
+                          "type": "string",
+                          "title": "Last recorded send state of the stream, one of SEND_{NONE,COMMAND,RESPONSE,PAYLOAD,CHECKSUM,FLUSH,SUCCESS,ERROR}"
+                        },
+                        "vertexid": {
+                          "type": "string",
+                          "title": "Vertex identifier in the TGen model"
+                        }
+                      }
+                    },
+                    "time_info": {
+                      "type": "object",
+                      "title": "Elapsed time until reaching given substeps in a measurement",
+                      "required": [
+                        "created-ts",
+                        "now-ts",
+                        "usecs-to-checksum-recv",
+                        "usecs-to-checksum-send",
+                        "usecs-to-command",
+                        "usecs-to-first-byte-recv",
+                        "usecs-to-first-byte-send",
+                        "usecs-to-last-byte-recv",
+                        "usecs-to-last-byte-send",
+                        "usecs-to-proxy-choice",
+                        "usecs-to-proxy-init",
+                        "usecs-to-proxy-request",
+                        "usecs-to-proxy-response",
+                        "usecs-to-response",
+                        "usecs-to-socket-connect",
+                        "usecs-to-socket-create"
+                      ],
+                      "properties": {
+                        "created-ts": {
+                          "type": "string",
+                          "title": "Montonic system time when TGen created this stream, in microseconds since some arbitrary, fixed point in the past."
+                        },
+                        "now-ts": {
+                          "type": "string",
+                          "title": "Montonic system time when TGen computed elapsed microseconds for this stream, in microseconds since some arbitrary, fixed point in the past."
+                        },
+                        "usecs-to-checksum-recv": {
+                          "type": "string",
+                          "title": "Elapsed microseconds until the TGen client has received the checksum from the TGen server, or -1 if missing (step 11)"
+                        },
+                        "usecs-to-checksum-send": {
+                          "type": "string",
+                          "title": "Elapsed microseconds until the TGen client has sent the checksum to the TGen server, or -1 if missing (step 11)"
+                        },
+                        "usecs-to-command": {
+                          "type": "string",
+                          "title": "Elapsed microseconds until the TGen client has sent the command to the TGen server, or -1 if missing (step 7)"
+                        },
+                        "usecs-to-first-byte-recv": {
+                          "type": "string",
+                          "title": "Elapsed microseconds until the TGen client has received the first payload byte, or -1 if missing (step 9)"
+                        },
+                        "usecs-to-first-byte-send": {
+                          "type": "string",
+                          "title": "Elapsed microseconds until the TGen client has sent the first payload byte, or -1 if missing (step 9)"
+                        },
+                        "usecs-to-last-byte-recv": {
+                          "type": "string",
+                          "title": "Elapsed microseconds until the TGen client has received the last payload byte, or -1 if missing (step 10)"
+                        },
+                        "usecs-to-last-byte-send": {
+                          "type": "string",
+                          "title": "Elapsed microseconds until the TGen client has sent the last payload byte, or -1 if missing (step 10)"
+                        },
+                        "usecs-to-proxy-choice": {
+                          "type": "string",
+                          "title": "Elapsed microseconds until the TGen client has received the SOCKS choice from the Tor client, or -1 if missing (step 4)"
+                        },
+                        "usecs-to-proxy-init": {
+                          "type": "string",
+                          "title": "Elapsed microseconds until the TGen client has sent the SOCKS initialization to the Tor client, or -1 if missing (step 3)"
+                        },
+                        "usecs-to-proxy-request": {
+                          "type": "string",
+                          "title": "Elapsed microseconds until the TGen client has sent the SOCKS request to the Tor client, or -1 if missing (step 5)"
+                        },
+                        "usecs-to-proxy-response": {
+                          "type": "string",
+                          "title": "Elapsed microseconds until the TGen client has received the SOCKS response from the Tor client, or -1 if missing (step 6)"
+                        },
+                        "usecs-to-response": {
+                          "type": "string",
+                          "title": "Elapsed microseconds until the TGen client has received the command from the TGen server, or -1 if missing (step 8)"
+                        },
+                        "usecs-to-socket-connect": {
+                          "type": "string",
+                          "title": "Elapsed microseconds until the TGen client has connected to the Tor client's SOCKS port, or -1 if missing (step 2)"
+                        },
+                        "usecs-to-socket-create": {
+                          "type": "string",
+                          "title": "Elapsed microseconds until the TGen client has opened a TCP connection to the Tor client's SOCKS port, or -1 if missing (step 1)"
+                        }
+                      }
+                    },
+                    "transport_info": {
+                      "type": "object",
+                      "title": "Information about the TGen transport",
+                      "required": [
+                        "error",
+                        "fd",
+                        "local",
+                        "proxy",
+                        "remote",
+                        "state"
+                      ],
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "title": "Error code, or NONE if no error occurred"
+                        },
+                        "fd": {
+                          "type": "string",
+                          "title": "File descriptor"
+                        },
+                        "local": {
+                          "type": "string",
+                          "title": "Local host name, IP address, and TCP port"
+                        },
+                        "proxy": {
+                          "type": "string",
+                          "title": "Proxy host name, IP address, and TCP port"
+                        },
+                        "remote": {
+                          "type": "string",
+                          "title": "Remote host name, IP address, and TCP port"
+                        },
+                        "state": {
+                          "type": "string",
+                          "title": "Last recorded state of the transport, one of CONNECT,INIT,CHOICE,REQUEST,AUTH_{REQUEST,RESPONSE},RESPONSE_{STATUS,TYPE,IPV4,NAMELEN,NAME},SUCCESS_{OPEN,EOF},ERROR"
+                        }
+                      }
+                    },
+                    "unix_ts_end": {
+                      "type": "number",
+                      "title": "Final end time of the measurement, obtained from the log time of the [stream-success] or [stream-error] log message, given in seconds since the epoch"
+                    },
+                    "unix_ts_start": {
+                      "type": "number",
+                      "title": "Initial start time of the measurement, obtained by subtracting the largest number of elapsed microseconds in time_info from unix_ts_end, given in seconds since the epoch"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "tor": {
+            "type": "object",
+            "title": "Metadata obtained from client-side Tor controller logs",
+            "required": [
+              "circuits",
+              "streams"
+            ],
+            "properties": {
+              "circuits": {
+                "type": "object",
+                "title": "Information about Tor circuits, by circuit identifier, obtained from CIRC and CIRC_MINOR events, for all circuits created by the Tor client",
+                "propertyNames": {
+                  "pattern": "^[0-9]+$"
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "title": "Information about a Tor circuit",
+                  "required": [
+                    "circuit_id",
+                    "elapsed_seconds",
+                    "unix_ts_end",
+                    "unix_ts_start"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "build_quantile": {
+                      "type": "number",
+                      "title": "Circuit build time quantile, obtained from the most recent BUILDTIMEOUT_SET event preceding the CIRC LAUNCHED event"
+                    },
+                    "build_timeout": {
+                      "type": "integer",
+                      "title": "Circuit build time in milliseconds, obtained from the most recent BUILDTIMEOUT_SET event preceding the CIRC event with status LAUNCHED"
+                    },
+                    "buildtime_seconds": {
+                      "type": "number",
+                      "title": "Build time in seconds, computed as time elapsed between CIRC LAUNCHED and CIRC BUILT events"
+                    },
+                    "circuit_id": {
+                      "type": "integer",
+                      "title": "Circuit identifier, obtained from CIRC and CIRC_MINOR events"
+                    },
+                    "elapsed_seconds": {
+                      "type": "array",
+                      "title": "Elapsed seconds until receiving and logging CIRC and CIRC_MINOR events",
+                      "items": {
+                        "type": "array",
+                        "title": "Elapsed seconds until reaching a given circuit status change",
+                        "items": [
+                          {
+                            "type": "string",
+                            "title": "Circuit status change"
+                          },
+                          {
+                            "type": "number",
+                            "title": "Elapsed seconds"
+                          }
+                        ]
+                      }
+                    },
+                    "failure_reason_local": {
+                      "type": "string",
+                      "title": "Local failure reason, obtained from CIRC FAILED events"
+                    },
+                    "failure_reason_remote": {
+                      "type": "string",
+                      "title": "Remote failure reason, obtained from CIRC FAILED events"
+                    },
+                    "filtered_out": {
+                      "type": "boolean",
+                      "title": "Whether this circuit has been filtered out when applying filters in `onionperf filter`."
+                    },
+                    "path": {
+                      "type": "array",
+                      "title": "Path information",
+                      "items": {
+                        "type": "array",
+                        "title": "Elapsed seconds until extending the circuit to a given relay",
+                        "items": [
+                          {
+                            "type": "string",
+                            "pattern": "^\\$[0-9A-Z]{40}~[0-9a-zA-Z]{1,19}$",
+                            "title": "Relay fingerprint and nickname"
+                          },
+                          {
+                            "type": "number",
+                            "minimum": 0,
+                            "title": "Elapsed seconds"
+                          }
+                        ]
+                      }
+                    },
+                    "unix_ts_end": {
+                      "type": "number",
+                      "title": "Final end time of the circuit, obtained from the log time of the last CIRC CLOSED or CIRC FAILED event, given in seconds since the epoch"
+                    },
+                    "unix_ts_start": {
+                      "type": "number",
+                      "title": "Initial start time of the circuit, obtained from the log time of the CIRC LAUNCHED event, given in seconds since the epoch"
+                    }
+                  }
+                }
+              },
+              "streams": {
+                "type": "object",
+                "title": "Information about Tor stream, by stream identifier, obtained from STREAM events, for all streams created by the Tor client",
+                "propertyNames": {
+                  "pattern": "^[0-9]+$"
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "title": "Information about a Tor stream",
+                  "required": [
+                    "circuit_id",
+                    "elapsed_seconds",
+                    "stream_id",
+                    "target",
+                    "unix_ts_end",
+                    "unix_ts_start"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "circuit_id": {
+                      "title": "Circuit identifier, obtained from STREAM events"
+                    },
+                    "elapsed_seconds": {
+                      "type": "array",
+                      "title": "Elapsed seconds until receiving and logging STREAM events",
+                      "items": {
+                        "type": "array",
+                        "items": [
+                          {
+                            "type": "string",
+                            "title": "Stream purpose and STREAM event status"
+                          },
+                          {
+                            "type": "number",
+                            "title": "Elapsed seconds"
+                          }
+                        ]
+                      }
+                    },
+                    "failure_reason_local": {
+                      "type": "string",
+                      "title": "Local failure reason, obtained from STREAM FAILED events"
+                    },
+                    "failure_reason_remote": {
+                      "type": "string",
+                      "title": "Remote failure reason, obtained from STREAM FAILED events"
+                    },
+                    "source": {
+                      "type": "string",
+                      "title": "Stream source IP address and TCP port, obtained from STREAM NEW or STREAM NEWRESOLVE events"
+                    },
+                    "stream_id": {
+                      "type": "integer",
+                      "title": "Stream identifier, unique at least for the lifetime of this stream"
+                    },
+                    "target": {
+                      "type": "string",
+                      "title": "Stream target domain name and TCP port, obtained from STREAM events",
+                      "examples": [
+                        "jzxfvaupigl7hkemf4jhfi2vrruvbb7ucyiwdolkkc2hf3xlm34f3qyd.onion:8080"
+                      ]
+                    },
+                    "unix_ts_end": {
+                      "type": "number",
+                      "title": "Final end time of the stream, obtained from the log time of the last STREAM CLOSED or STREAM FAILED event, given in seconds since the epoch"
+                    },
+                    "unix_ts_start": {
+                      "type": "number",
+                      "title": "Initial start time of the stream, obtained from the log time of the first STREAM NEW or STREAM NEWRESOLVE event, given in seconds since the epoch"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "filters": {
+      "type": "object",
+      "title": "Filters applied by type",
+      "propertyNames": {
+        "pattern": "^[A-Za-z/]"
+      },
+      "additionalProperties": {
+        "type": "array",
+        "title": "Filters applied of a given type",
+        "items": {
+          "type": "object",
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "title": "Filter name"
+            },
+            "filepath": {
+              "type": "string",
+              "title": "File path"
+            }
+          }
+        }
+      }
+    },
+    "type": {
+      "type": "string",
+      "title": "Document type",
+      "const": "onionperf"
+    },
+    "version": {
+      "type": "string",
+      "title": "Document version",
+      "pattern": "^4\\.[0-9]+$"
+    }
+  }
+}

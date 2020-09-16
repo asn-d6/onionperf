@@ -24,7 +24,7 @@ class OPAnalysis(Analysis):
 
     def __init__(self, nickname=None, ip_address=None):
         super().__init__(nickname, ip_address)
-        self.json_db = {'type': 'onionperf', 'version': '3.0', 'data': {}}
+        self.json_db = {'type': 'onionperf', 'version': '4.0', 'data': {}}
         self.torctl_filepaths = []
 
     def add_torctl_file(self, filepath):
@@ -62,8 +62,7 @@ class OPAnalysis(Analysis):
         self.json_db['data'][self.nickname]["tgen"].pop("stream_summary")
         self.did_analysis = True
 
-
-    def save(self, filename=None, output_prefix=os.getcwd(), do_compress=True, date_prefix=None):
+    def save(self, filename=None, output_prefix=os.getcwd(), do_compress=True, date_prefix=None, sort_keys=True):
         if filename is None:
             base_filename = "onionperf.analysis.json.xz"
             if date_prefix is not None:
@@ -80,7 +79,7 @@ class OPAnalysis(Analysis):
         logging.info("saving analysis results to {0}".format(filepath))
 
         outf = util.FileWritable(filepath, do_compress=do_compress)
-        json.dump(self.json_db, outf, sort_keys=True, separators=(',', ': '), indent=2)
+        json.dump(self.json_db, outf, sort_keys=sort_keys, separators=(',', ': '), indent=2)
         outf.close()
 
         logging.info("done!")
@@ -97,6 +96,15 @@ class OPAnalysis(Analysis):
             return self.json_db['data'][node]['tgen']['transfers']
         except:
             return None
+
+    def get_tor_circuits(self, node):
+        try:
+            return self.json_db['data'][node]['tor']['circuits']
+        except:
+            return None
+
+    def set_tor_circuits(self, node, tor_circuits):
+        self.json_db['data'][node]['tor']['circuits'] = tor_circuits
 
     def get_tor_streams(self, node):
         try:
@@ -125,7 +133,7 @@ class OPAnalysis(Analysis):
         if 'type' not in db or 'version' not in db:
             logging.warning("'type' or 'version' not present in database")
             return None
-        elif db['type'] != 'onionperf' or str(db['version']) >= '4.':
+        elif db['type'] != 'onionperf' or str(db['version']) >= '5.':
             logging.warning("type or version not supported (type={0}, version={1})".format(db['type'], db['version']))
             return None
         else:

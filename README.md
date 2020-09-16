@@ -16,6 +16,7 @@
     + [Troubleshooting](#troubleshooting)
   * [Analysis](#analysis)
     + [Analyzing measurement results](#analyzing-measurement-results)
+    + [Filtering measurement results](#filtering-measurement-results)
     + [Visualizing measurement results](#visualizing-measurement-results)
     + [Interpreting the PDF output format](#interpreting-the-pdf-output-format)
     + [Interpreting the CSV output format](#interpreting-the-csv-output-format)
@@ -252,6 +253,26 @@ OnionPerf's `analyze` mode has several command-line parameters for customizing t
 onionperf analyze --help
 ```
 
+### Filtering measurement results
+
+The `filter` subcommand can be used to filter out measurement results based on given criteria. This subcommand is typically used in combination with the `visualize` subcommand. The workflow is to apply one or more filters and then visualize only those measurements with an existing mapping between TGen transfers/streams and Tor streams/circuits.
+
+Currently, OnionPerf measurement results can be filtered based on Tor relay fingerprints found in Tor circuits, although support for filtering based on Tor streams and/or TGen transfers/streams may be added in the future.
+
+The `filter` mode takes a list of fingerprints and one or more existing analysis files as inputs and outputs new analysis files with the same contents as the input analysis files plus annotations on those Tor circuits that have been filtered out. If a directory of analysis files is given to '-i', the structure and filenames of that directory are preserved under the path specified with '-o'.
+
+For example, the analysis file produced above can be filtered with the following command, which retains only those Tor circuits with fingerprints contained in the file 'fingerprints.txt':
+
+```shell
+onionperf filter -i onionperf.analysis.json.xz -o filtered.onionperf.analysis.json.xz --include-fingerprints fingerprints.txt
+```
+
+OnionPerf's `filter` command usage can be inspected with:
+
+```shell
+onionperf filter --help
+```
+
 ### Visualizing measurement results
 
 Step two in the analysis is to process analysis files with OnionPerf's `visualize` mode which produces CSV and PDF files as output.
@@ -266,6 +287,8 @@ As a result, two files are written to the current working directory:
 
 - `onionperf.viz.$datetime.csv` contains visualized data in a CSV file format; and
 - `onionperf.viz.$datetime.pdf` contains visualizations in a PDF file format.
+
+For analysis files containing tor circuit filters, only measurements with an existing mapping between TGen transfers/streams Tor streams/circuits which have not been marked as 'filtered\_out' are visualized.
 
 Similar to the other modes, OnionPerf's `visualize` mode has command-line parameters for customizing the visualization step:
 
