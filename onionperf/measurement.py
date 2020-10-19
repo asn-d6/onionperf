@@ -436,7 +436,7 @@ WarnUnsafeSocks 0\nSafeLogging 0\nMaxCircuitDirtiness 60 seconds\nDataDirectory 
                     key_type=key_type)
             self.hs_v3_service_id = response.service_id
             self.hs_v3_control_port = control_port
-    
+
             logging.info("Ephemeral hidden service is available at {0}.onion".format(response.service_id))
         return response.service_id
 

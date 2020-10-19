@@ -6,9 +6,15 @@
 '''
 
 import datetime
+import time
+import os
+
 from time import sleep
 from socket import gethostname
 from functools import partial
+
+import shutil
+import pathlib
 
 # stem imports
 from stem.control import EventType, Controller, Signal
@@ -69,6 +75,11 @@ class TorMonitor(object):
                         drop_timeouts_response = torctl.msg("DROPTIMEOUTS")
                         if not drop_timeouts_response.is_ok():
                             self.__log(self.writable, "[WARNING] unrecognized command DROPTIMEOUTS in tor\n")
+
+                        self.__log(self.writable, "Dropping guards %s" % os.getcwd())
+                        pathlib.Path("tor-client/onionperf_state_history/").mkdir(parents=True, exist_ok=True)
+                        shutil.copy("tor-client/state", "tor-client/onionperf_state_history/state_%s" % time.strftime("%Y%m%d-%H%M%S"))
+
                     sleep(1)
                     interval_count += 1
                     if newnym_interval_seconds is not None and interval_count >= next_newnym:
