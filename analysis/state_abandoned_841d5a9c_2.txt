@@ -1,0 +1,83 @@
+# Tor state file last generated on 2020-10-21 09:11:01 local time
+# Other times below are in UTC
+# You *do not* need to edit this file.
+
+CircuitBuildTimeBin 275 83
+CircuitBuildTimeBin 325 310
+CircuitBuildTimeBin 375 233
+CircuitBuildTimeBin 425 98
+CircuitBuildTimeBin 475 68
+CircuitBuildTimeBin 525 34
+CircuitBuildTimeBin 575 25
+CircuitBuildTimeBin 625 23
+CircuitBuildTimeBin 675 14
+CircuitBuildTimeBin 725 13
+CircuitBuildTimeBin 775 12
+CircuitBuildTimeBin 825 7
+CircuitBuildTimeBin 875 5
+CircuitBuildTimeBin 925 4
+CircuitBuildTimeBin 1075 2
+CircuitBuildTimeBin 1125 2
+CircuitBuildTimeBin 1175 3
+CircuitBuildTimeBin 1225 3
+CircuitBuildTimeBin 1275 1
+CircuitBuildTimeBin 1375 2
+CircuitBuildTimeBin 1425 1
+CircuitBuildTimeBin 1475 2
+CircuitBuildTimeBin 1525 2
+CircuitBuildTimeBin 1625 1
+CircuitBuildTimeBin 1675 1
+CircuitBuildTimeBin 1725 1
+CircuitBuildTimeBin 1925 1
+CircuitBuildTimeBin 2025 1
+CircuitBuildTimeBin 2175 1
+CircuitBuildTimeBin 2375 1
+CircuitBuildTimeBin 2875 1
+CircuitBuildTimeBin 3075 1
+CircuitBuildTimeBin 3225 1
+CircuitBuildTimeBin 3575 1
+CircuitBuildTimeBin 3925 2
+CircuitBuildTimeBin 4025 1
+CircuitBuildTimeBin 4775 1
+CircuitBuildTimeBin 4825 1
+CircuitBuildTimeBin 7825 1
+CircuitBuildTimeBin 8175 1
+CircuitBuildTimeBin 10625 1
+CircuitBuildTimeBin 11375 1
+CircuitBuildTimeBin 11475 1
+CircuitBuildTimeBin 11625 1
+CircuitBuildTimeBin 12925 1
+CircuitBuildTimeBin 13775 1
+CircuitBuildTimeBin 14425 1
+CircuitBuildTimeBin 17175 1
+CircuitBuildTimeBin 18175 1
+CircuitBuildTimeBin 23975 1
+CircuitBuildTimeBin 25825 1
+CircuitBuildTimeBin 32625 1
+CircuitBuildTimeBin 32875 1
+CircuitBuildTimeBin 56175 1
+CircuitBuildAbandonedCount 21
+Dormant 0
+Guard in=default rsa_id=AE95BDA37A5BB4685FEBB7F06649D6CE949B5316 nickname=Unnamed sampled_on=2020-10-16T21:38:49 sampled_idx=0 sampled_by=0.4.5.0-alpha-dev listed=1 confirmed_on=2020-10-19T07:16:05 confirmed_idx=0 pb_use_attempts=75.987545 pb_use_successes=75.924067 pb_circ_attempts=159.312500 pb_circ_successes=154.960938 pb_successful_circuits_closed=154.640625 pb_unusable_circuits=0.320312 pb_timeouts=2.773438
+Guard in=default rsa_id=CF6A6080091BB210AA3892FEFE2F6A396DA08DF3 nickname=cryzrelay01 sampled_on=2020-10-09T12:27:19 sampled_idx=1 sampled_by=0.4.5.0-alpha-dev listed=1 confirmed_on=2020-10-11T00:38:26 confirmed_idx=1
+Guard in=default rsa_id=2AE2CA4BD2B7754F29432C25E03314D52AC4CAF1 nickname=RelayOfMadness sampled_on=2020-10-17T01:08:33 sampled_idx=2 sampled_by=0.4.5.0-alpha-dev listed=1 confirmed_on=2020-10-17T06:33:14 confirmed_idx=2
+Guard in=default rsa_id=B7BF02E856F203B28E0D71088D71F1806D0B6AD2 nickname=myNiceRelay sampled_on=2020-10-14T16:33:51 sampled_idx=3 sampled_by=0.4.5.0-alpha-dev listed=1
+Guard in=default rsa_id=FD449127D30D8F5D124653D9EF736EDF4A12B4DC nickname=lw sampled_on=2020-10-13T06:40:02 sampled_idx=4 sampled_by=0.4.5.0-alpha-dev listed=1
+Guard in=default rsa_id=B32B93C90DCAF0012328A8D55D621D26B186E11A nickname=OnionOnion123 sampled_on=2020-10-18T06:16:53 sampled_idx=5 sampled_by=0.4.5.0-alpha-dev listed=1
+Guard in=default rsa_id=54DE63F4587058B79152A75A0238D7F7A0279215 nickname=uzieka sampled_on=2020-10-13T23:29:24 sampled_idx=6 sampled_by=0.4.5.0-alpha-dev listed=1
+Guard in=default rsa_id=0512FE6BE9CCA0ED133152E64010B2FBA141EB10 nickname=FalkensteinTor02 sampled_on=2020-10-13T18:12:30 sampled_idx=7 sampled_by=0.4.5.0-alpha-dev listed=1
+Guard in=default rsa_id=5CE3AD8AD04ADE66C0037A3CF5F7F7A40D48A20B nickname=polizeierziehung sampled_on=2020-10-14T23:22:24 sampled_idx=8 sampled_by=0.4.5.0-alpha-dev listed=1
+Guard in=default rsa_id=02928855BFAD787F8B363F21860D1E7D156E0655 nickname=MrDetonia sampled_on=2020-10-20T18:17:23 sampled_idx=9 sampled_by=0.4.5.0-alpha-dev listed=1
+Guard in=default rsa_id=F3CEC87ED91E0B0B1D86BE4D7DE90F00B607ECAF nickname=TotorBE2 sampled_on=2020-10-14T17:15:25 sampled_idx=10 sampled_by=0.4.5.0-alpha-dev listed=1
+Guard in=default rsa_id=1B90395827F7499A37C73F09BC5AA0225808F6FC nickname=zlangtor1 sampled_on=2020-10-16T22:52:46 sampled_idx=11 sampled_by=0.4.5.0-alpha-dev listed=1
+Guard in=default rsa_id=42D47C736518BFA495CA31AEE40AE468F0BDA2A6 nickname=kimjongun sampled_on=2020-10-15T19:18:56 sampled_idx=12 sampled_by=0.4.5.0-alpha-dev listed=1
+Guard in=default rsa_id=95FCD71974985F8CB546821E3DC4D834794F77F9 nickname=FabulousMonkey sampled_on=2020-10-15T18:22:45 sampled_idx=13 sampled_by=0.4.5.0-alpha-dev listed=1
+Guard in=default rsa_id=BEBA52AC89045D6EAD68E977DF3F98BCF8330AAF nickname=TOL6 sampled_on=2020-10-19T22:18:04 sampled_idx=14 sampled_by=0.4.5.0-alpha-dev listed=1
+Guard in=default rsa_id=98867F5242505A2DD581C85B1CE256090B87F138 nickname=Piratenpartei03 sampled_on=2020-10-13T23:01:56 sampled_idx=15 sampled_by=0.4.5.0-alpha-dev listed=1
+Guard in=default rsa_id=00C22D3BC1822EB8EA380AF04245337399E796E2 nickname=iriseden sampled_on=2020-10-13T00:39:50 sampled_idx=16 sampled_by=0.4.5.0-alpha-dev listed=1
+Guard in=default rsa_id=874D84382C892F3F61CC9E106BF08843DE0B865A nickname=Spigen sampled_on=2020-10-12T01:38:42 sampled_idx=17 sampled_by=0.4.5.0-alpha-dev listed=1
+Guard in=default rsa_id=56781CCC9F6D29FEA148799AB588429C893A473C nickname=scurra1 sampled_on=2020-10-14T16:30:39 sampled_idx=18 sampled_by=0.4.5.0-alpha-dev listed=1
+Guard in=default rsa_id=E8466E02C893B9A6602A251CCEA100F252E25B4B nickname=BetelgeuseIT sampled_on=2020-10-17T01:59:29 sampled_idx=19 sampled_by=0.4.5.0-alpha-dev listed=1
+LastWritten 2020-10-21 09:11:01
+TorVersion Tor 0.4.5.0-alpha-dev (git-f7f353c43efcd8ab)
+TotalBuildTimes 1000

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import math
 import sys
 
@@ -73,4 +74,7 @@ plt.ylabel('Probability')
 plt.title("Histogram of %d circuit timeout values fitted against Pareto with shape=%.3f, loc=%.3f and scale=%.3f" %(len(data), shape, loc, scale))
 plt.grid(True)
 
-plt.show()
+#plt.show()
+basename=os.path.splitext(sys.argv[1])[0]
+plt.savefig(basename + "_pareto.png", dpi=300)
+
