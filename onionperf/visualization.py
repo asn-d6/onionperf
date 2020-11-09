@@ -126,6 +126,9 @@ class TGenVisualization(Visualization):
                         tor_stream = None
                         tor_circuit = None
                         if source_port and unix_ts_end:
+                            if source_port not in tor_streams_by_source_port:
+                                print("skipping")
+                                continue
                             for s in tor_streams_by_source_port[source_port]:
                                 if abs(unix_ts_end - s["unix_ts_end"]) < 150.0:
                                     tor_stream = s
