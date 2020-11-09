@@ -4,6 +4,8 @@ import os
 import math
 import sys
 
+import numpy
+
 from scipy.stats import pareto
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
@@ -54,8 +56,10 @@ fig, ax = plt.subplots()
 bins = list(range(0, max(data), 100)) # bins should be every 100ms
 bins.append(max(data)) # also include the last one
 
-print(bins)
+#print(bins)
 plt.hist(data, bins=bins, density=True, facecolor='green', alpha=1)
+
+numpy.seterr('raise')
 
 # Try to fit a Pareto in the data
 # shape is b (alpha in wikipedia), scale is x (x_b in wikipedia)
