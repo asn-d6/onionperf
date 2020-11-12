@@ -3,6 +3,7 @@
 import os
 import math
 import sys
+import random
 
 import numpy
 
@@ -11,6 +12,8 @@ import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 
 numpy.seterr('raise')
+
+SUBSAMPLING_SIZES = [100, 500, 1000]
 
 def parse_state_line(line):
     """
@@ -34,7 +37,7 @@ def parse_state_line(line):
 
     return ([value] * occurences)
 
-def extract_data(state_fname):
+def extract_data(state_fname, subsampling_n):
     # Extract data from state file
     data = []
     for line in open(state_fname,'r'):
@@ -48,41 +51,53 @@ def extract_data(state_fname):
         if math.isnan(value):
             data[i] = max(data)
 
+    data = random.sample(data, subsampling_n)
+
     return data
 
-def plot_state_file(data):
+def plot_state_file(state_fname, data, ax):
 
     # Make the bins for the histogram
     bins = list(range(0, max(data), 100)) # bins should be every 100ms
     bins.append(max(data)) # also include the last one
 
     # Plot the histogram
-    fig, ax = plt.subplots()
-    plt.hist(data, bins=bins, density=True, facecolor='green', alpha=1)
+    ax.hist(data, bins=bins, density=True, facecolor='green', alpha=1)
 
     # Try to fit a Pareto distribution to the data
     shape, loc, scale = pareto.fit(data, 1, loc=0, scale=1)
     y = pareto.pdf(bins, shape, loc=loc, scale=scale)
     # Plot the pareto
-    l = plt.plot(bins, y, 'r--', linewidth=2)
+    l = ax.plot(bins, y, 'r--', linewidth=2)
 
     # Set up the graph metadata
     plt.xticks((0,500, 1000, 1500) + tuple(range(2500, max(data), 5000)), rotation=90)
     ax.grid(alpha=0.3)
-    plt.xlabel('Miliseconds')
-    plt.ylabel('Probability')
-    plt.title("Histogram of %d circuit timeout values fitted against Pareto with shape=%.3f, loc=%.3f and scale=%.3f" %(len(data), shape, loc, scale))
-    plt.grid(True)
+    ax.set_xlabel('Miliseconds')
+    ax.set_ylabel('Probability')
+
+    basename=os.path.splitext(os.path.basename(state_fname))[0]
+    ax.set_title("%s [%d timeouts: Pareto(shape=%.3f, loc=%.3f, scale=%.3f)]" %(basename, len(data), shape, loc, scale))
+
+    ax.grid(True)
 
     # Plot it! :)
-    plt.show()
+    #plt.show()
     #basename=os.path.splitext(sys.argv[1])[0]
     #plt.savefig(basename + "_pareto.png", dpi=300)
 
 def plot_all(state_fnames_list):
-    for state_fname in state_fnames_list:
-        data = extract_data(state_fname)
-        plot_state_file(data)
+    n_states = len(state_fnames_list)
+    fig, (ax_list) = plt.subplots(nrows=len(SUBSAMPLING_SIZES), ncols=n_states)
+
+    for i, state_fname in enumerate(state_fnames_list):
+        for s, subsampling_n in enumerate(SUBSAMPLING_SIZES):
+            data = extract_data(state_fname, subsampling_n)
+            plot_state_file(state_fname, data, ax_list[s][i])
+
+
+    plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=0.4)
+    plt.show()
 
 def main():
     if len(sys.argv) < 2:
